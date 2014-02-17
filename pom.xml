@@ -44,7 +44,10 @@
     </pluginRepositories>
 
 	<properties>
+        <api.name>clientlibrarian-api</api.name>
 		<core.name>clientlibrarian-core</core.name>
+        <core.version>1.0.0-SNAPSHOT</core.version>
+        <api.version>1.0.0-SNAPSHOT</api.version>
 		<maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss.SSSZ</maven.build.timestamp.format>
 		<timestamp>${maven.build.timestamp}</timestamp>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

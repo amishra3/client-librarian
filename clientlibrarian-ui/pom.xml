@@ -73,10 +73,15 @@
 		</plugins>
 	</build>
 	<dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>${api.name}</artifactId>
+            <version>${api.version}</version>
+        </dependency>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>${core.name}</artifactId>
-			<version>${project.version}</version>
+			<version>${core.version}</version>
 		</dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
