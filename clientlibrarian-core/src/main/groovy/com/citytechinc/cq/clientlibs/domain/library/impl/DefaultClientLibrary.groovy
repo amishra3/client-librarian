@@ -65,8 +65,8 @@ class DefaultClientLibrary implements ClientLibrary {
         this.embeddedCategories = embeddedCategories
         this.dependencies = dependencies
 
-        cssResourcePaths = Sets.newHashSet()
-        jsResourcePaths = Sets.newHashSet()
+        cssResourcePaths = Sets.newLinkedHashSet()
+        jsResourcePaths = Sets.newLinkedHashSet()
 
         this.resourceResolver = clientLibraryResource.getResourceResolver()
 
@@ -152,7 +152,7 @@ class DefaultClientLibrary implements ClientLibrary {
 
         LOG.debug( "Determining the inclusion file set for " + resource.path )
 
-        Set<String> retSet = Sets.newHashSet()
+        Set<String> retSet = Sets.newLinkedHashSet()
 
         def base = ""
 
@@ -232,7 +232,7 @@ class DefaultClientLibrary implements ClientLibrary {
 
     }
 
-    private String getDataForFileResource( Resource resource ) {
+    private static String getDataForFileResource( Resource resource ) {
         Reader fileReader = getReaderForBinaryResource( resource )
 
         StringBuffer currentFileData = new StringBuffer()
@@ -337,7 +337,7 @@ class DefaultClientLibrary implements ClientLibrary {
 
     public Set<String> getClientLibraryResourcePaths() {
 
-        Set<String> retSet = Sets.newHashSet( )
+        Set<String> retSet = Sets.newLinkedHashSet( )
 
         retSet.addAll( jsResourcePaths )
         retSet.addAll( cssResourcePaths )

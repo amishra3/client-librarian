@@ -117,7 +117,7 @@ class DirectedAcyclicGraph<T> implements DependencyGraph<T> {
             def payload = it.visit()
 
             //Visit all of the nodes outgoing edges
-            getOutgoingEdges( payload ).each { visit( visitableNodes.get( it[ "to" ] ) ) }
+            getOutgoingEdgesFromNode( payload ).each { visit( visitableNodes.get( it[ "to" ] ) ) }
 
             //Add the node to the ordered list of nodes
             retList.push( payload )

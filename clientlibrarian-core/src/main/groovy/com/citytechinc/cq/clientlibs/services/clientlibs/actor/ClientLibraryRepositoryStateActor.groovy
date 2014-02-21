@@ -10,6 +10,7 @@ import com.citytechinc.cq.clientlibs.services.clientlibs.actor.messages.OrderedD
 import com.citytechinc.cq.clientlibs.services.clientlibs.actor.messages.RefreshMessage
 import com.citytechinc.cq.clientlibs.services.clientlibs.state.builder.ClientLibraryStateStatisticsBuilder
 import com.citytechinc.cq.clientlibs.structures.graph.dag.DirectedAcyclicGraph
+import com.citytechinc.cq.clientlibs.util.ComponentUtils
 import com.google.common.base.Stopwatch
 import com.google.common.collect.Lists
 import com.google.common.collect.Maps
@@ -361,15 +362,21 @@ class ClientLibraryRepositoryStateActor extends DynamicDispatchActor {
         DirectedAcyclicGraph<ClientLibrary> dependencyGraph = new DirectedAcyclicGraph<ClientLibrary>();
 
         List<ClientLibrary> startingPointList = Lists.newArrayList(startingPoints);
+        Set<ClientLibrary> visitedLibraries = Sets.newHashSet();
 
         while (!startingPointList.isEmpty()) {
             ClientLibrary curClientLibrary = startingPointList.remove(startingPointList.size() - 1);
 
-            if (!dependencyGraph.contains(curClientLibrary)) {
+            if (!visitedLibraries.contains(curClientLibrary)) {
+                visitedLibraries.add(curClientLibrary)
 
-                LOG.debug( "Adding " + curClientLibrary + " to the dependency graph" );
+                if (!dependencyGraph.contains(curClientLibrary)) {
 
-                dependencyGraph.addNode(curClientLibrary);
+                    LOG.debug( "Adding " + curClientLibrary + " to the dependency graph" );
+
+                    dependencyGraph.addNode(curClientLibrary);
+
+                }
 
                 /*
                  * Add all embedded libraries as dependents of the current library
@@ -387,7 +394,7 @@ class ClientLibraryRepositoryStateActor extends DynamicDispatchActor {
                          * individually considered yet.  If it is, then it was previously considered or is
                          * already in the starting point list.
                          */
-                        if (!dependencyGraph.contains(curEmbeddedLibrary)) {
+                        if (!visitedLibraries.contains(curEmbeddedLibrary)) {
                             startingPointList.add(curEmbeddedLibrary);
                         }
                         dependencyGraph.addEdge(curEmbeddedLibrary, curClientLibrary);
@@ -398,21 +405,29 @@ class ClientLibraryRepositoryStateActor extends DynamicDispatchActor {
                  * Add all dependencies of the current library
                  */
                 for (String curDependencyLibraryCategory : curClientLibrary.getDependencies()) {
-                    if (!clientLibraryCategoryMap.containsKey(curDependencyLibraryCategory)) {
-                        throw new InvalidClientLibraryCategoryException("Dependency library category " + curDependencyLibraryCategory + " was not found in the list of known libraries");
-                    }
-                    for (ClientLibrary curDependencyLibrary : clientLibraryCategoryMap.get(curDependencyLibraryCategory)) {
-                        LOG.debug( "While processing dependencies : found edge " + curClientLibrary + " -> " + curDependencyLibrary );
-                        /*
-                         * See comment under the embedded library loop
-                         */
-                        if (!dependencyGraph.contains(curDependencyLibrary)) {
-                            startingPointList.add(curDependencyLibrary);
+                    if (StringUtils.isNotBlank(curDependencyLibraryCategory)) {
+                        if (!clientLibraryCategoryMap.containsKey(curDependencyLibraryCategory)) {
+                            throw new InvalidClientLibraryCategoryException("Dependency library category " + curDependencyLibraryCategory + " was not found in the list of known libraries");
                         }
-                        dependencyGraph.addEdge(curClientLibrary, curDependencyLibrary);
+                        for (ClientLibrary curDependencyLibrary : clientLibraryCategoryMap.get(curDependencyLibraryCategory)) {
+                            LOG.debug( "While processing dependencies : found edge " + curClientLibrary + " -> " + curDependencyLibrary );
+                            /*
+                             * See comment under the embedded library loop
+                             */
+                            if (!visitedLibraries.contains(curDependencyLibrary)) {
+                                startingPointList.add(curDependencyLibrary);
+                            }
+                            dependencyGraph.addEdge(curClientLibrary, curDependencyLibrary);
+                        }
+                    }
+                    else {
+                        LOG.warn("Empty or blank library dependency found in client library " + curClientLibrary.toString());
                     }
                 }
+
             }
+
+
         }
 
         return dependencyGraph.order( true );

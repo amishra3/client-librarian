@@ -152,5 +152,9 @@
             <groupId>org.codehaus.gpars</groupId>
             <artifactId>gpars</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.adobe.granite</groupId>
+            <artifactId>com.adobe.granite.jmx</artifactId>
+        </dependency>
 	</dependencies>
 </project>

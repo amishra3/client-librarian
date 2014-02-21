@@ -3,12 +3,11 @@
  * All rights reserved - Do Not Redistribute
  * Confidential and Proprietary
  */
-package com.citytechinc.cq.clientlibs.services.clientlibs.impl
+package com.citytechinc.cq.clientlibs.services.clientlibs
 
 import com.citytechinc.cq.clientlibs.domain.library.ClientLibrary
 import com.citytechinc.cq.clientlibs.domain.library.LibraryType
 import com.citytechinc.cq.clientlibs.domain.library.exceptions.InvalidClientLibraryCategoryException
-import com.citytechinc.cq.clientlibs.services.clientlibs.ClientLibraryRepository
 import com.citytechinc.cq.clientlibs.services.clientlibs.actor.ClientLibraryRepositoryStateActor
 import com.citytechinc.cq.clientlibs.services.clientlibs.actor.messages.ClientLibraryStatisticsRequestMessage
 import com.citytechinc.cq.clientlibs.services.clientlibs.actor.messages.OrderedDependenciesRequestMessage
@@ -35,7 +34,7 @@ import javax.jcr.query.InvalidQueryException
 /**
  *
  */
-@Component( label="CQ Client Library Repository", description="" )
+@Component( label="AEM Client Librarian Repository Service", description="" )
 @Service
 @Properties( [
     @Property( name = Constants.SERVICE_VENDOR, value = "CITYTECH, Inc." ) ] )
