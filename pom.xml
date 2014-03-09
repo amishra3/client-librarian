@@ -121,14 +121,6 @@
                 <version>1.9.6</version>
             </dependency>
 
-            <!-- gpars -->
-            <dependency>
-                <groupId>org.codehaus.gpars</groupId>
-                <artifactId>gpars</artifactId>
-                <version>1.1.0</version>
-                <scope>provided</scope>
-            </dependency>
-
             <!-- jmx -->
             <dependency>
                 <groupId>com.adobe.granite</groupId>

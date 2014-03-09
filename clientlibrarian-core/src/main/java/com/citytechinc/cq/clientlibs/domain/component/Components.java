@@ -15,4 +15,8 @@ public class Components {
         return new DefaultDependentComponent(componentResource, dependencies);
     }
 
+    public static DependentComponent forResourceAndSuperDependentComponent(Resource componentResource, DependentComponent superComponent) {
+        return new DefaultDependentComponent(componentResource, superComponent.getDependencies());
+    }
+
 }

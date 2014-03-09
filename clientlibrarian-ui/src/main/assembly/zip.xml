@@ -26,7 +26,6 @@
             <includes>
                 <include>com.citytechinc.cq.clientlibs:clientlibrarian-api</include>
                 <include>com.citytechinc.cq.clientlibs:clientlibrarian-core</include>
-                <include>org.codehaus.gpars:gpars</include>
                 <include>com.google.guava:guava</include>
             </includes>
             <useStrictFiltering>true</useStrictFiltering>

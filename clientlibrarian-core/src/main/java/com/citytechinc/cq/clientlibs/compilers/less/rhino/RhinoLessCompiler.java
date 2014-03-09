@@ -30,7 +30,7 @@ public class RhinoLessCompiler implements LessCompiler {
 
     private static final Logger LOG = LoggerFactory.getLogger(RhinoLessCompiler.class);
 
-    private static final String LESS_RESOURCE_PATH = "/SCRIPT-LIBS/less-rhino-1.4.0-custom.js";
+    private static final String LESS_RESOURCE_PATH = "/SCRIPT-LIBS/less-rhino-1.6.2.js";
 
     @Override
     public String compile(String source) throws LessCompilationException {

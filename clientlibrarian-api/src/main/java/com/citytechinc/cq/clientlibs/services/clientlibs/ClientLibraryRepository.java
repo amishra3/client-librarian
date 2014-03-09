@@ -9,7 +9,6 @@ import javax.jcr.RepositoryException;
 
 import com.citytechinc.cq.clientlibs.domain.library.LibraryType;
 import com.citytechinc.cq.clientlibs.services.clientlibs.exceptions.ClientLibraryCompilationException;
-import groovyx.gpars.actor.Actor;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.Resource;
 
@@ -20,7 +19,5 @@ public interface ClientLibraryRepository {
     public void refresh() throws RepositoryException, LoginException;
 
     public Integer getClientLibraryCount();
-
-    public Actor getActor();
 
 }
