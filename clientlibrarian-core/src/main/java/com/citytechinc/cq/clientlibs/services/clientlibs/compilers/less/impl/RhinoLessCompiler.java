@@ -3,7 +3,7 @@
  * All rights reserved - Do Not Redistribute
  * Confidential and Proprietary
  */
-package com.citytechinc.cq.clientlibs.compilers.less.rhino;
+package com.citytechinc.cq.clientlibs.services.clientlibs.compilers.less.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,17 +45,21 @@ public class RhinoLessCompiler implements LessCompiler {
 
         standardScope.put("lessSource", standardScope, sanitizeSourceString(source));
 
-        String lessCall = "var parser = new less.Parser; " +
-                          "var result = ''; " +
-                          "var lesserror; " +
-                          "parser.parse( lessSource, function( error, tree ) { " +
-                          "  if ( error ) {" +
-                          "    lesserror = error;" +
-                          "  }" +
-                          "  else {" +
-                          "    result = tree.toCSS();" +
-                          "  }" +
-                          "} );";
+        String lessCall =   "var parser = new less.Parser; " +
+                            "var result = ''; " +
+                            "var lesserror; " +
+                            "parser.parse( lessSource, function( error, tree ) { " +
+                            "  if ( error ) {" +
+                            "    lesserror = error;" +
+                            "  }" +
+                            "  else {" +
+                            "    try { " +
+                            "      result = tree.toCSS();" +
+                            "    } catch ( e ) {" +
+                            "      lesserror = e; " +
+                            "    }" +
+                            "  }" +
+                            "} );";
 
         rhinoContext.evaluateString(standardScope, lessCall, "generated.js", 1, null);
 
@@ -130,6 +134,7 @@ public class RhinoLessCompiler implements LessCompiler {
         Optional<String> errorColumnOptional = getLessErrorStringProperty("column", lessErrorObject);
         Optional<String> errorMessageOptional = getLessErrorStringProperty("message", lessErrorObject);
         Optional<String> errorTypeOptional = getLessErrorStringProperty("type", lessErrorObject);
+        Optional<NativeArray> errorExtractOptional = getLessErrorArrayProperty("extract", lessErrorObject);
 
         returnedErrorStringBuffer.append("Less Compilation Error ");
 
@@ -148,6 +153,14 @@ public class RhinoLessCompiler implements LessCompiler {
         if (errorMessageOptional.isPresent()) {
             returnedErrorStringBuffer.append(" - ").append(errorMessageOptional.get());
         }
+        if (errorExtractOptional.isPresent()) {
+            returnedErrorStringBuffer.append("\n");
+
+            for (Object o : errorExtractOptional.get().getIds()) {
+                int index = (Integer) o;
+                returnedErrorStringBuffer.append(index).append(": ").append(errorExtractOptional.get().get(index, lessErrorObject)).append( "\n" );
+            }
+        }
 
         return returnedErrorStringBuffer.toString();
 
@@ -157,8 +170,20 @@ public class RhinoLessCompiler implements LessCompiler {
 
         Object lessErrorPropertyValue = lessError.get(name, lessError);
 
-        if (lessErrorPropertyValue != null && !(lessErrorPropertyValue instanceof Undefined) ) {
+        if (lessErrorPropertyValue != null && !(lessErrorPropertyValue instanceof Undefined)) {
             return Optional.of(lessErrorPropertyValue.toString());
+        }
+
+        return Optional.absent();
+
+    }
+
+    private static Optional<NativeArray> getLessErrorArrayProperty(String name, NativeObject lessError) {
+
+        Object lessErrorPropertyValue = lessError.get(name, lessError);
+
+        if (lessErrorPropertyValue != null && !(lessErrorPropertyValue instanceof Undefined)) {
+            return Optional.of((NativeArray) lessErrorPropertyValue);
         }
 
         return Optional.absent();
