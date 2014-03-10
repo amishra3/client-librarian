@@ -9,7 +9,7 @@
 
     <tag>
         <name>pageLibrary</name>
-        <tag-class>com.citytechinc.cq.clientlibs.tags.PageLibraryTag</tag-class>
+        <tag-class>com.citytechinc.cq.clientlibs.core.tags.PageLibraryTag</tag-class>
         <attribute>
             <name>type</name>
             <required>true</required>
