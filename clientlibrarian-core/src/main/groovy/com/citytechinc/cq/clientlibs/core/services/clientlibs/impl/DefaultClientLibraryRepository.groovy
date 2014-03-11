@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList
 import org.apache.felix.scr.annotations.*
 import org.apache.sling.api.resource.LoginException
 import org.apache.sling.api.resource.Resource
+import org.apache.sling.settings.SlingSettingsService
 import org.mozilla.javascript.RhinoException
 import org.osgi.framework.Constants
 import org.slf4j.Logger
@@ -50,6 +51,9 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
     @Reference
     private LessCompiler lessCompiler
+
+    @Reference
+    SlingSettingsService slingSettingsService
 
     //@Reference
     //private ClientLibraryEventFactory clientLibraryEventFactory
@@ -133,13 +137,24 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         try {
             List<ClientLibrary> dependencies = getOrderedDependencies( root )
 
+            Set<String> currentRunModes = slingSettingsService.runModes
+
             LOG.debug( "Found dependencies for " + root.getPath() + " : " + dependencies )
 
+            /*
+             * Filter the included libraries based on run mode
+             */
+            List<ClientLibrary> filteredDependencies = dependencies.findAll { ClientLibrary currentDependency ->
+                return currentDependency.isIncludedForRunModes(currentRunModes)
+            }
+
+            LOG.debug( "Filtered dependencies for " + root.getPath() + " : " + filteredDependencies )
+
             if ( type == LibraryType.CSS ) {
-                return compileCSSClientLibrary( root, dependencies )
+                return compileCSSClientLibrary( root, filteredDependencies )
             }
             else if ( type == LibraryType.JS ) {
-                return compileJSClientLibrary( root, dependencies )
+                return compileJSClientLibrary( root, filteredDependencies )
             }
 
             return null

@@ -1,5 +1,7 @@
 package com.citytechinc.cq.clientlibs.api.domain.library;
 
+import com.citytechinc.cq.clientlibs.api.domain.sling.runmode.SlingRunModeGroup;
+
 import java.util.List;
 import java.util.Set;
 
@@ -73,5 +75,20 @@ public interface ClientLibrary {
      */
     public List<String> getEmbeddedCategories();
 
+    /**
+     *
+     * Establishes the run modes in which this library should be included.  An empty list indicates that
+     * it should be included in all run modes.  This method represents the runModes property of the client
+     * library folder.
+     *
+     * @return The list of run modes in which this library should be included
+     */
+    public Set<SlingRunModeGroup> getRunModeGroups();
 
+    /**
+     *
+     * @param runModes
+     * @return True if the library should be included based on the run modes provided, false otherwise
+     */
+    public Boolean isIncludedForRunModes(Set<String> runModes);
 }

@@ -6,6 +6,7 @@
 package com.citytechinc.cq.clientlibs.core.domain.library.impl
 
 import com.citytechinc.cq.clientlibs.api.domain.library.ClientLibrary
+import com.citytechinc.cq.clientlibs.api.domain.sling.runmode.SlingRunModeGroup
 import com.google.common.base.Optional
 import com.google.common.collect.Sets
 import org.apache.sling.api.resource.Resource
@@ -59,11 +60,15 @@ class DefaultClientLibrary implements ClientLibrary {
     private Optional<String> jsIncludeFilePathOptional
     private Optional<String> cssIncludeFilePathOptional
 
-    def DefaultClientLibrary( Set<String> categories, Resource clientLibraryResource, List<String> embeddedCategories, List<String> dependencies ) {
+    private Set<SlingRunModeGroup> runModeGroups
+
+    def DefaultClientLibrary( Set<String> categories, Resource clientLibraryResource, List<String> embeddedCategories, List<String> dependencies, Set<SlingRunModeGroup> runModeGroups ) {
         this.categories = categories
         this.clientLibraryResource = clientLibraryResource
         this.embeddedCategories = embeddedCategories
         this.dependencies = dependencies
+
+        this.runModeGroups = runModeGroups
 
         cssResourcePaths = Sets.newLinkedHashSet()
         jsResourcePaths = Sets.newLinkedHashSet()
@@ -365,6 +370,20 @@ class DefaultClientLibrary implements ClientLibrary {
 
     public List<String> getEmbeddedCategories() {
         embeddedCategories
+    }
+
+    @Override
+    Set<SlingRunModeGroup> getRunModeGroups() {
+        return runModeGroups
+    }
+
+    @Override
+    Boolean isIncludedForRunModes(Set<String> runModes) {
+
+        return getRunModeGroups().isEmpty() || getRunModeGroups().any {
+            it.matches(runModes)
+        }
+
     }
 
     public List<String> getDependencies() {
