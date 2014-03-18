@@ -13,9 +13,11 @@ import com.citytechinc.cq.clientlibs.api.services.clientlibs.ClientLibraryReposi
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ResourceDependencyProvider
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.compilers.less.LessCompiler
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.ClientLibraryCompilationException
+import com.citytechinc.cq.clientlibs.api.services.clientlibs.transformer.VariableProvider
 import com.citytechinc.cq.clientlibs.core.services.clientlibs.state.manager.impl.ClientLibraryRepositoryStateManager
 import com.citytechinc.cq.clientlibs.api.services.components.DependentComponentManager
 import com.google.common.collect.ImmutableList
+import org.apache.commons.lang.StringUtils
 import org.apache.felix.scr.annotations.*
 import org.apache.sling.api.resource.LoginException
 import org.apache.sling.api.resource.Resource
@@ -42,6 +44,9 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
     @Reference( cardinality = ReferenceCardinality.MANDATORY_MULTIPLE, policy = ReferencePolicy.DYNAMIC, bind = "bindDependencyProvider", unbind = "unbindDependencyProvider", referenceInterface = ResourceDependencyProvider )
     private final List<ResourceDependencyProvider> resourceDependencyProviderList = []
+
+    @Reference( cardinality = ReferenceCardinality.OPTIONAL_MULTIPLE, policy = ReferencePolicy.DYNAMIC, bind = "bindVariableProvider", unbind = "unbindVariableProvider", referenceInterface = VariableProvider )
+    private final List<VariableProvider> variableProviderList = []
 
     @Reference
     private ClientLibraryManager clientLibraryManager
@@ -121,6 +126,36 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         }
     }
 
+    protected void bindVariableProvider(VariableProvider variableProvider) {
+
+        LOG.debug("Binding VariableProvider " + variableProvider)
+
+        synchronized (variableProviderList) {
+            if (variableProviderList.contains(variableProvider)) {
+                LOG.error(variableProvider + " already exists in the service's Variable Provider List")
+            }
+            else {
+                variableProviderList.add(variableProvider)
+            }
+        }
+
+    }
+
+    protected void unbindVariableProvider(VariableProvider variableProvider) {
+
+        LOG.debug("Unbinding VariableProvider " + variableProvider)
+
+        synchronized (variableProviderList) {
+            if (variableProviderList.contains(variableProvider)) {
+                variableProviderList.remove(variableProvider)
+            }
+            else {
+                LOG.error("An attempt to unbind " + variableProvider + " was made however this dependency provider is not in the current list of known providers")
+            }
+        }
+
+    }
+
     @Override
     public Integer getClientLibraryCount() {
         return stateManager.requestStateStatistics().clientLibraryCount
@@ -151,10 +186,15 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
             LOG.debug( "Filtered dependencies for " + root.getPath() + " : " + filteredDependencies )
 
             if ( type == LibraryType.CSS ) {
-                return compileCSSClientLibrary( root, filteredDependencies )
+                String compiledCssLibrary = compileCSSClientLibrary( root, filteredDependencies )
+                String transformedCssLibrary = transformLibrary(root, compiledCssLibrary)
+                return transformedCssLibrary
             }
             else if ( type == LibraryType.JS ) {
-                return compileJSClientLibrary( root, filteredDependencies )
+                String compiledJsLibrary = compileJSClientLibrary( root, filteredDependencies )
+                String transformedJsLibrary = transformLibrary(root, compiledJsLibrary)
+                return transformedJsLibrary
+
             }
 
             return null
@@ -162,6 +202,36 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         } catch ( InvalidClientLibraryCategoryException e ) {
             throw new ClientLibraryCompilationException( "Invalid Client Library Exception hit in attempting to build library", e )
         }
+    }
+
+    /**
+     *
+     * TODO: Optimize this implementation so that it doesn't run replace all a billion times
+     *
+     * @param library
+     * @return
+     */
+    private String transformLibrary(Resource root, String library) {
+
+        String retLibrary = library
+        List<VariableProvider> variableProviderListCopy = null
+
+        synchronized (variableProviderList) {
+            variableProviderListCopy = ImmutableList.copyOf(variableProviderList)
+        }
+
+        Map<String, String> variables = [:]
+
+        variableProviderListCopy.each {
+            variables.putAll(it.getVariables(root))
+        }
+
+        variables.each { k, v ->
+            retLibrary = StringUtils.replace(retLibrary, "<%" + k + "%>", v)
+        }
+
+        return retLibrary
+
     }
 
     private List<ClientLibrary> getOrderedDependencies( Resource root ) throws InvalidQueryException, RepositoryException, InvalidClientLibraryCategoryException {
