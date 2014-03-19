@@ -187,12 +187,12 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
             if ( type == LibraryType.CSS ) {
                 String compiledCssLibrary = compileCSSClientLibrary( root, filteredDependencies )
-                String transformedCssLibrary = transformLibrary(root, compiledCssLibrary)
-                return transformedCssLibrary
+
+                return compiledCssLibrary
             }
             else if ( type == LibraryType.JS ) {
                 String compiledJsLibrary = compileJSClientLibrary( root, filteredDependencies )
-                String transformedJsLibrary = transformLibrary(root, compiledJsLibrary)
+
                 return transformedJsLibrary
 
             }
@@ -256,7 +256,9 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
             }
         }
 
-        return mergedClientLibraries.toString();
+        String transformedJsLibrary = transformLibrary(root, mergedClientLibraries.toString())
+
+        return transformedJsLibrary;
 
     }
 
@@ -285,9 +287,11 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
             }
         }
 
+        String transformedCssLibrary = transformLibrary(root, mergedClientLibraries.toString())
+
         if (usesLess) {
             try {
-                return lessCompiler.compile(mergedClientLibraries.toString());
+                return lessCompiler.compile(transformedCssLibrary);
             } catch (RhinoException e) {
                 StringBuffer errorMessageBuffer = new StringBuffer( "Rhino Exception encountered while compiling CSS Library \n" )
                 errorMessageBuffer.append( e.details() ).append( "\n" )
@@ -303,7 +307,7 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
             }
         }
 
-        return mergedClientLibraries.toString();
+        return transformedCssLibrary;
     }
 
 }
