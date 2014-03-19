@@ -39,7 +39,8 @@
                         <Bundle-Name>${project.name}</Bundle-Name>
                         <Bundle-Vendor>${project.parent.organization.name}</Bundle-Vendor>
                         <Export-Package>!*.impl,com.citytechinc.cq.clientlibs.core.*</Export-Package>
-                        <DynamicImport-Package>*</DynamicImport-Package>
+                        <Private-Package>org.mozilla,org.mozilla.*</Private-Package>
+                        <Import-Package>!org.mozilla,!org.mozilla.*,*</Import-Package>
                     </instructions>
                 </configuration>
 			</plugin>
@@ -109,6 +110,12 @@
 		<dependency>
 			<groupId>com.day.cq.wcm</groupId>
 			<artifactId>cq-wcm-foundation</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>rhino</groupId>
+                    <artifactId>js</artifactId>
+                </exclusion>
+            </exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.day.cq.wcm</groupId>
@@ -162,6 +169,14 @@
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 		</dependency>
+
+        <!-- Rhino - Although Sling packages this OOB, it is not a new enough version to support our less compiler -->
+        <dependency>
+            <groupId>org.mozilla</groupId>
+            <artifactId>rhino</artifactId>
+            <version>1.7R4</version>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- ClientLibrarian API -->
         <dependency>
