@@ -3,8 +3,10 @@ package com.citytechinc.cq.clientlibs.core.services.components.impl
 import com.citytechinc.cq.clientlibs.core.domain.component.Components
 import com.citytechinc.cq.clientlibs.api.domain.component.DependentComponent
 import com.citytechinc.cq.clientlibs.api.services.components.DependentComponentManager
+import com.citytechinc.cq.clientlibs.core.listeners.components.impl.ClientLibraryComponentListener
 import com.google.common.base.Optional
 import com.google.common.collect.ImmutableMap
+import com.google.common.collect.ImmutableSet
 import org.apache.felix.scr.annotations.Activate
 import org.apache.felix.scr.annotations.Component
 import org.apache.felix.scr.annotations.Deactivate
@@ -20,6 +22,7 @@ import org.slf4j.LoggerFactory
 
 import javax.jcr.RepositoryException
 import javax.jcr.Session
+import javax.jcr.observation.ObservationManager
 import javax.jcr.query.Query
 import javax.jcr.query.QueryManager
 
@@ -46,6 +49,8 @@ class DefaultDependentComponentManager implements DependentComponentManager {
     @org.apache.felix.scr.annotations.Reference
     private SlingRepository repository
     private Session session
+
+    private ClientLibraryComponentListener clientLibraryComponentListener
 
     @Override
     Optional<DependentComponent> getDependentComponentForResource(Resource r) {
@@ -92,6 +97,15 @@ class DefaultDependentComponentManager implements DependentComponentManager {
     }
 
     @Override
+    Set<DependentComponent> getComponents() {
+
+        synchronized (this) {
+            return ImmutableSet.copyOf(dependentComponentSet)
+        }
+
+    }
+
+    @Override
     void requestRefresh() {
 
         synchronized (this) {
@@ -103,10 +117,18 @@ class DefaultDependentComponentManager implements DependentComponentManager {
     @Activate
     protected void activate( Map<String, Object> properties ) throws RepositoryException, LoginException {
 
+        ObservationManager observationManager = administrativeSession.workspace.observationManager
+        clientLibraryComponentListener = new ClientLibraryComponentListener(null, this)
+        observationManager.addEventListener(clientLibraryComponentListener, 31, "/", true, null, null, true)
+
     }
 
     @Deactivate
     protected void deactivate() {
+
+        if ( clientLibraryComponentListener != null ) {
+            administrativeSession.workspace.observationManager.removeEventListener(clientLibraryComponentListener)
+        }
 
         closeResourceResolver()
         closeSession()
