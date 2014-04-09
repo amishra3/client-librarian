@@ -14,6 +14,7 @@
 	<name>ClientLibrarian Core</name>
 
 	<build>
+        <testSourceDirectory>src/test/groovy</testSourceDirectory>
         <resources>
             <resource>
                 <directory>src/main/resources/META-INF</directory>
@@ -62,6 +63,12 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
+                <version>2.16</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Spec*</include>
+                    </includes>
+                </configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -184,6 +191,12 @@
             <artifactId>clientlibrarian-api</artifactId>
             <version>1.0.0-SNAPSHOT</version>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- Prosper testing framework -->
+        <dependency>
+            <groupId>com.citytechinc.aem.prosper</groupId>
+            <artifactId>prosper</artifactId>
         </dependency>
 	</dependencies>
 </project>
