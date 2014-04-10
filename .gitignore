@@ -3,6 +3,7 @@
 .metadata
 .classpath
 .settings/
+.idea/
 target/
 *.iml
 *.ipr
