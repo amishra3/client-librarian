@@ -4,6 +4,7 @@ import com.citytechinc.cq.clientlibs.core.domain.library.ClientLibraries
 import com.citytechinc.cq.clientlibs.api.domain.library.ClientLibrary
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ClientLibraryManager
 import com.google.common.collect.ImmutableMap
+import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Sets
 import org.apache.felix.scr.annotations.Activate
 import org.apache.felix.scr.annotations.Component
@@ -40,6 +41,18 @@ class DefaultClientLibraryManager implements ClientLibraryManager {
     @org.apache.felix.scr.annotations.Reference
     private SlingRepository repository
     private Session session
+
+    @Override
+    Set<ClientLibrary> getAllLibraries() {
+
+        synchronized (this) {
+
+            refreshIfNotInitialized();
+            return ImmutableSet.copyOf(clientLibrarySet);
+
+        }
+
+    }
 
     @Override
     Set<ClientLibrary> getLibrariesForCategory(String category) {
