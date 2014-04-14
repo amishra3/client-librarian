@@ -3,6 +3,7 @@
 <head>
 
     <title>Library Visualizer</title>
-    <cq:includeClientLib categories="clientlibrarian" />
+
+    <cq:includeClientLib categories="clientlibrarian.libraryvisualizer" />
 
 </head>

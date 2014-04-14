@@ -4,9 +4,9 @@
 
     <jcr:content
             cq:defaultView="html"
-            cq:template="/apps/permissionseditor/templates/permissionsEditor"
+            cq:template="/apps/clientlibrarian/templates/libraryvisualizer"
             jcr:primaryType="cq:PageContent"
-            jcr:title="CQ5 User Access Manager"
-            sling:resourceType="permissionseditor/components/page/permissionsEditor"/>
+            jcr:title="Library Visualizer"
+            sling:resourceType="clientlibrarian/components/page/libraryvisualizer"/>
 
 </jcr:root>

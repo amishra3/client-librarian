@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0"
+        jcr:primaryType="cq:ClientLibraryFolder"
+        dependencies="jquery"
+        categories="clientlibrarian.libraryvisualizer"
+        runModes="author" />
+
+<!-- NOTE: included more recent version of d3.js since OOTB d3.js is far behind the current version. -->

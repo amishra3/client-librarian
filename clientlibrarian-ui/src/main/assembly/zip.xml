@@ -10,9 +10,22 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <fileSets>
         <fileSet>
+            <directory>${basedir}/src/main/content/jcr_root</directory>
+            <outputDirectory>jcr_root</outputDirectory>
+            <excludes>
+                <exclude>**/.vlt</exclude>
+                <exclude>**/.vltignore</exclude>
+                <exclude>**/.DS_Store</exclude>
+                <exclude>**/docroot/**</exclude>
+            </excludes>
+            <filtered>true</filtered>
+        </fileSet>
+        <fileSet>
             <directory>${basedir}/src/main/content/META-INF</directory>
             <outputDirectory>META-INF</outputDirectory>
             <excludes>
+                <exclude>**/.vlt</exclude>
+                <exclude>**/.vltignore</exclude>
                 <exclude>**/.DS_Store</exclude>
             </excludes>
             <filtered>true</filtered>
@@ -31,4 +44,10 @@
             <useStrictFiltering>true</useStrictFiltering>
         </dependencySet>
     </dependencySets>
+    <files>
+        <file>
+            <source>src/main/filters/filter.xml</source>
+            <outputDirectory>META-INF/vault</outputDirectory>
+        </file>
+    </files>
 </assembly>
