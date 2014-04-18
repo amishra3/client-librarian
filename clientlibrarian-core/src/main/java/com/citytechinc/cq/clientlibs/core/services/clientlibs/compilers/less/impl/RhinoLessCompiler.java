@@ -114,6 +114,7 @@ public class RhinoLessCompiler implements LessCompiler {
      * Properties found in a less error
      *
      * <ul>
+     *     <il>filename</il>
      *     <li>line</li>
      *     <li>message</li>
      *     <li>callLine</li>
@@ -132,6 +133,7 @@ public class RhinoLessCompiler implements LessCompiler {
 
         StringBuffer returnedErrorStringBuffer = new StringBuffer();
 
+        Optional<String> fileOptional = getLessErrorStringProperty("filename", lessErrorObject);
         Optional<String> errorLineOptional = getLessErrorStringProperty("line", lessErrorObject);
         Optional<String> errorColumnOptional = getLessErrorStringProperty("column", lessErrorObject);
         Optional<String> errorMessageOptional = getLessErrorStringProperty("message", lessErrorObject);
@@ -145,6 +147,10 @@ public class RhinoLessCompiler implements LessCompiler {
         }
 
         returnedErrorStringBuffer.append("encountered ");
+
+        if(fileOptional.isPresent()) {
+            returnedErrorStringBuffer.append("in file ").append(fileOptional.get()).append(" ");
+        }
 
         if (errorLineOptional.isPresent()) {
             returnedErrorStringBuffer.append("at line ").append(errorLineOptional.get()).append(" ");
