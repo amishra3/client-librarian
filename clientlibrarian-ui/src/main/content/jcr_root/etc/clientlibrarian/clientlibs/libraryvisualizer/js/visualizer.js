@@ -59,7 +59,8 @@ $(document).ready(function () {
         var width = 960,
             height = 500,
             nodeRadius = 6,
-            nodeTextPaddingLeft = 2;
+            nodeTextPaddingLeft = 2,
+            linkArrowHeight = 6;
 
         var force = d3.layout.force()
             .size([width, height])
@@ -86,13 +87,27 @@ $(document).ready(function () {
                 .links(graph.links)
                 .start();
 
+            svg.append('defs').selectAll("marker")
+                .data(["arrowhead"])
+                .enter().append("marker")
+                .attr("id", String)
+                .attr("viewBox", "0 -5 10 10")
+                .attr("refX", nodeRadius + linkArrowHeight + 5)
+                .attr("refY", 1)
+                .attr("markerWidth", 6)
+                .attr("markerHeight", linkArrowHeight)
+                .attr("orient", "auto")
+                .append("svg:path")
+                .attr("d", "M0,-5L10,0L0,5");
+
             var link = svg.selectAll('.link')
                 .data(graph.links)
                 .enter().append('g')
                 .attr('class', 'link');
 
             link.append('line')
-                .attr('class', function (d) { return d.type; });
+                .attr('class', function (d) { return d.type; })
+                .attr('marker-end', 'url(#arrowhead)');
 
             link.append('text')
                 .attr('dy', '.35em')
@@ -120,19 +135,21 @@ $(document).ready(function () {
                 node = svg.selectAll('.node');
 
             link.select('line')
-                .attr('x1', function(d) { return d.source.x; })
-                .attr('y1', function(d) { return d.source.y; })
-                .attr('x2', function(d) { return d.target.x; })
-                .attr('y2', function(d) { return d.target.y; });
+                .attr('x1', function (d) { return d.source.x; })
+                .attr('y1', function (d) { return d.source.y; })
+                .attr('x2', function (d) { return d.target.x; })
+                .attr('y2', function (d) { return d.target.y; });
 
             link.select('text')
                 .attr('x', function (d) {
                     var dx = Math.abs(d.source.x - d.target.x) / 2;
-                    return (d.source.x > d.target.x) ? d.source.x - dx : d.source.x + dx;
+                    var xn = (d.source.x > d.target.x) ? d.source.x - dx : d.source.x + dx;
+                    return xn;
                 })
                 .attr('y', function (d) {
                     var dy = Math.abs(d.source.y - d.target.y) / 2;
-                    return (d.source.y > d.target.y) ? d.source.y - dy : d.source.y + dy;
+                    var yn = (d.source.y > d.target.y) ? d.source.y - dy : d.source.y + dy;
+                    return yn;
                 });
 
             node.select('circle')
