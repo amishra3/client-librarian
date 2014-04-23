@@ -1,6 +1,5 @@
 
-.node {
-    font: 300 11px "Helvetica Neue", Helvetica, Arial, sans-serif;
+.node circle {
     fill: #bbb;
 }
 
@@ -8,61 +7,33 @@
     fill: #000;
 }
 
-.node.component {
+.node circle.component {
     fill: #f00;
 }
 
-.node.library {
+.node circle.library {
     fill: #0f0;
 }
 
-.node.category {
+.node circle.category {
     fill: #00f;
 }
 
-.link {
+.link line {
     stroke: #000;
     stroke-opacity: .4;
     fill: none;
     pointer-events: none;
 }
 
-.link.dependsOn {
+.link line.dependsOn {
     stroke: #f00;
 }
 
-.link.memberOf {
+.link line.memberOf {
     stroke: #0f0;
 }
 
-.link.embeds {
+.link line.embeds {
     stroke: #00f;
-}
-
-.node:hover,
-.node--source,
-.node--target {
-    font-weight: 700;
-}
-
-.node--source {
-    fill: #2ca02c;
-}
-
-.node--target {
-    fill: #d62728;
-}
-
-.link--source,
-.link--target {
-    stroke-opacity: 1;
-    stroke-width: 2px;
-}
-
-.link--source {
-    stroke: #d62728;
-}
-
-.link--target {
-    stroke: #2ca02c;
 }
