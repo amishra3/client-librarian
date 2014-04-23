@@ -57,7 +57,9 @@ $(document).ready(function () {
         container.html('');
 
         var width = 960,
-            height = 500;
+            height = 500,
+            nodeRadius = 6,
+            nodeTextPaddingLeft = 2;
 
         var force = d3.layout.force()
             .size([width, height])
@@ -73,9 +75,6 @@ $(document).ready(function () {
             .attr('width', width)
             .attr('height', height);
 
-        var link = svg.selectAll('.link'),
-            node = svg.selectAll('.node');
-
         var $form = $(this);
         var pagePath = $form.find('#pagePath').val();
         d3.json('/bin/clientlibrarian/graph.json?page.path=' + pagePath, function(error, resp) {
@@ -87,26 +86,50 @@ $(document).ready(function () {
                 .links(graph.links)
                 .start();
 
-            link = link.data(graph.links)
-                .enter().append('line')
+            var link = svg.selectAll('.link').data(graph.links).enter();
+
+            link.append('line')
                 .attr('class', function (d) { return 'link ' + d.type; });
 
-            node = node.data(graph.nodes)
-                .enter().append('circle')
-                .attr('class', function (d) { return 'node ' + d.type; })
-                .attr('r', 12)
-                .on('dblclick', dblclick)
+            link.append('text')
+                .attr('dx', 12)
+                .attr('dy', '.35em')
+                .text(function (d) { return d.type; });
+
+            var node = svg.selectAll('.node')
+                .data(graph.nodes)
+                .enter().append('g')
+                .attr('class', 'node');
+
+            node.append('circle')
+                .attr('class', function (d) { return d.type; })
+                .attr('r', nodeRadius)
+                .on('dbclick', dblclick)
                 .call(drag);
+
+            node.append('text')
+                .attr('dy', '.35em')
+                .text(function (d) { return d.id; });
+
         });
 
         function tick() {
+            var link = svg.selectAll('.link'),
+                node = svg.selectAll('.node');
+
             link.attr('x1', function(d) { return d.source.x; })
                 .attr('y1', function(d) { return d.source.y; })
                 .attr('x2', function(d) { return d.target.x; })
                 .attr('y2', function(d) { return d.target.y; });
 
-            node.attr('cx', function(d) { return d.x; })
+            node.select('circle')
+                .attr('cx', function(d) { return d.x; })
                 .attr('cy', function(d) { return d.y; });
+
+            node.select('text')
+                .attr('x', function (d) { return d.x + nodeRadius + nodeTextPaddingLeft; })
+                .attr('y', function (d) { return d.y; });
+
         }
 
         // stop normal submit action
