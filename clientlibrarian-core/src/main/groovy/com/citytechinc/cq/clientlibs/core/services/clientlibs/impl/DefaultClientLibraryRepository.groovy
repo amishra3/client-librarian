@@ -14,6 +14,7 @@ import com.citytechinc.cq.clientlibs.api.services.clientlibs.ResourceDependencyP
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.compilers.less.LessCompiler
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.ClientLibraryCompilationException
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.transformer.VariableProvider
+import com.citytechinc.cq.clientlibs.api.structures.graph.DependencyGraph
 import com.citytechinc.cq.clientlibs.core.services.clientlibs.state.manager.impl.ClientLibraryRepositoryStateManager
 import com.citytechinc.cq.clientlibs.api.services.components.DependentComponentManager
 import com.google.common.collect.ImmutableList
@@ -204,7 +205,13 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         }
     }
 
-    /**
+    @Override
+    public DependencyGraph<ClientLibrary> getClientLibraryDependencyGraph(Resource root) {
+
+        return getDependencyGraph(root);
+
+    }
+/**
      *
      * TODO: Optimize this implementation so that it doesn't run replace all a billion times
      *
@@ -231,6 +238,18 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         }
 
         return retLibrary
+
+    }
+
+    private DependencyGraph<ClientLibrary> getDependencyGraph(Resource root) {
+
+        List<ResourceDependencyProvider> resourceDependencyProviderListCopy = null
+
+        synchronized (resourceDependencyProviderList) {
+            resourceDependencyProviderListCopy = ImmutableList.copyOf(resourceDependencyProviderList)
+        }
+
+        return stateManager.requestDependencyGraph(root, resourceDependencyProviderListCopy)
 
     }
 

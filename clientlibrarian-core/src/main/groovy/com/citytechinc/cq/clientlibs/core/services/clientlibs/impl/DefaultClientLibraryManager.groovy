@@ -43,6 +43,18 @@ class DefaultClientLibraryManager implements ClientLibraryManager {
     private Session session
 
     @Override
+    ClientLibrary getLibrary(String path) {
+
+        synchronized (this) {
+
+            refreshIfNotInitialized()
+            return ImmutableSet.copyOf(clientLibrarySet).find { it.clientLibraryPath == path }
+
+        }
+
+    }
+
+    @Override
     Set<ClientLibrary> getAllLibraries() {
 
         synchronized (this) {

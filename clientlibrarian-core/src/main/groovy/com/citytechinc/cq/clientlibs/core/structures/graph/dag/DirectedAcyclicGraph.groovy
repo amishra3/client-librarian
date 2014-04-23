@@ -5,6 +5,7 @@
  */
 package com.citytechinc.cq.clientlibs.core.structures.graph.dag
 
+import com.citytechinc.cq.clientlibs.api.domain.library.ClientLibrary
 import com.citytechinc.cq.clientlibs.api.structures.graph.DependencyGraph
 import com.citytechinc.cq.clientlibs.api.structures.graph.Edge
 import com.citytechinc.cq.clientlibs.api.structures.graph.exceptions.InvalidGraphException
@@ -44,7 +45,7 @@ class DirectedAcyclicGraph<T> implements DependencyGraph<T> {
      * @param to
      */
     public void addEdge(T from, T to) {
-        def newEdge = [ from : from, to : to ]
+        def newEdge = new SimpleEdge<T>(from, to);
         if (!edges.contains(newEdge)) {
             edges.add(newEdge)
             if ( !nodeEdges.containsKey(from) ) {
@@ -87,7 +88,16 @@ class DirectedAcyclicGraph<T> implements DependencyGraph<T> {
         return order( true )
     }
 
-    /**
+    @Override
+    public Set<T> getNodes() {
+        return nodes;
+    }
+
+    @Override
+    public Set<Edge<T>> getEdges() {
+        return edges;
+    }
+/**
      * A DFS implementation of a Topological sort on the Graph.
      *
      * http://en.wikipedia.org/wiki/Topological_sorting#Algorithms

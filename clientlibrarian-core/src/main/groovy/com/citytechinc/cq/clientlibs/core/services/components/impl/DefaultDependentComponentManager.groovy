@@ -131,7 +131,7 @@ class DefaultDependentComponentManager implements DependentComponentManager {
     protected Optional<DependentComponent> lookupDependentComponentForResourceType(String resourceType) {
 
         for (String currentSearchPath : administrativeResourceResolver.searchPath) {
-            def componentPath = currentSearchPath + "/" + resourceType
+            def componentPath = currentSearchPath + (currentSearchPath.endsWith('/') ? '' : '/' ) + resourceType
             if (dependentComponentsByComponentPath.containsKey(componentPath)) {
                 return Optional.fromNullable(dependentComponentsByComponentPath.get(componentPath))
             }

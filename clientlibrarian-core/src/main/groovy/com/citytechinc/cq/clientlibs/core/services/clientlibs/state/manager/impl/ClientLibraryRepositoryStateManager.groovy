@@ -5,6 +5,7 @@ import com.citytechinc.cq.clientlibs.api.domain.library.exceptions.InvalidClient
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ClientLibraryManager
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ResourceDependencyProvider
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.state.ClientLibraryStateStatistics
+import com.citytechinc.cq.clientlibs.api.structures.graph.DependencyGraph
 import com.citytechinc.cq.clientlibs.core.services.clientlibs.state.builder.ClientLibraryStateStatisticsBuilder
 import com.citytechinc.cq.clientlibs.api.services.components.DependentComponentManager
 import com.citytechinc.cq.clientlibs.core.structures.graph.dag.DirectedAcyclicGraph
@@ -36,7 +37,19 @@ class ClientLibraryRepositoryStateManager {
         }
     }
 
-    List<ClientLibrary> requestOrderedDependencies(Resource r, List<ResourceDependencyProvider> resourceDependencyProviderList) {
+    public DependencyGraph<ClientLibrary> requestDependencyGraph(Resource r, List<ResourceDependencyProvider> resourceDependencyProviderList) {
+
+        LOG.debug("Received Dependency Graph Request")
+
+        synchronized (this) {
+
+            return getDependencyGraph(r, resourceDependencyProviderList);
+
+        }
+
+    }
+
+    public List<ClientLibrary> requestOrderedDependencies(Resource r, List<ResourceDependencyProvider> resourceDependencyProviderList) {
         LOG.debug("Received Ordered Dependencies Request")
 
         synchronized (this) {
@@ -46,7 +59,7 @@ class ClientLibraryRepositoryStateManager {
         }
     }
 
-    ClientLibraryStateStatistics requestStateStatistics() {
+    public ClientLibraryStateStatistics requestStateStatistics() {
         LOG.debug("Received State Statistics Request")
 
         synchronized (this) {
@@ -73,17 +86,16 @@ class ClientLibraryRepositoryStateManager {
      *     <li>Determine the set of qualified component paths for which library dependencies are known and use these as starting points for a graph search.</li>
      *     <li>Starting from these starting points, build a dependency graph.
      *         Embedded libraries are added as though the embedded library is dependent on the embedding library.</li>
-     *     <li>Order the dependency graph.</li>
      * </ul>
      *
      * <p>
-     * The results of the ordering are returned.
+     * The resulting dependecy graph is returned.
      * </p>
      *
-     * @param root
-     * @return An ordered list of Client Libraries build using the algorithm stipulated in the description
+     * @param root  Page to begin search for dependencies.
+     * @return A dependency graph of Client Libraries built using the algorithm stipulated in the description
      */
-    protected List<ClientLibrary> getOrderedDependencies(Resource root, List<ResourceDependencyProvider> resourceDependencyProviderList) throws InvalidClientLibraryCategoryException {
+    protected DirectedAcyclicGraph<ClientLibrary> getDependencyGraph(Resource root, List<ResourceDependencyProvider> resourceDependencyProviderList) throws InvalidClientLibraryCategoryException {
 
         Set<ClientLibrary> startingPoints = Sets.newHashSet()
 
@@ -93,8 +105,6 @@ class ClientLibraryRepositoryStateManager {
         }
 
         DirectedAcyclicGraph<ClientLibrary> dependencyGraph = new DirectedAcyclicGraph<ClientLibrary>();
-
-
         Map<String, Set<ClientLibrary>> clientLibrariesByCategoryMap = clientLibraryManager.getLibrariesByCategory()
         List<ClientLibrary> startingPointList = Lists.newArrayList(startingPoints);
         //TODO: See if we can clean up this visitor abstraction
@@ -170,7 +180,35 @@ class ClientLibraryRepositoryStateManager {
 
         }
 
-        return dependencyGraph.order( true );
+        return dependencyGraph;
+
+    }
+
+    /**
+     * <p>
+     * Given a resource, perform the following algorithm:
+     * </p>
+     *
+     * <ul>
+     *     <li>Construct a Set of all sling:resourceTypes represented by the resource and any children of the resource</li>
+     *     <li>Qualify the resource type paths - each resource type path is qualified by iterating through the ResourceResolver's
+     *         search paths, prepending each to the relative resource type path, stopping as soon as a concrete resource definition is found.</li>
+     *     <li>Determine the set of qualified component paths for which library dependencies are known and use these as starting points for a graph search.</li>
+     *     <li>Starting from these starting points, build a dependency graph.
+     *         Embedded libraries are added as though the embedded library is dependent on the embedding library.</li>
+     *     <li>Order the dependency graph.</li>
+     * </ul>
+     *
+     * <p>
+     * The results of the ordering are returned.
+     * </p>
+     *
+     * @param root
+     * @return An ordered list of Client Libraries build using the algorithm stipulated in the description
+     */
+    protected List<ClientLibrary> getOrderedDependencies(Resource root, List<ResourceDependencyProvider> resourceDependencyProviderList) throws InvalidClientLibraryCategoryException {
+
+        return getDependencyGraph(root, resourceDependencyProviderList).order( true );
 
     }
 

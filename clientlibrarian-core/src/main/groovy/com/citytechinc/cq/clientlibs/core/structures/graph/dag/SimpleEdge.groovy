@@ -8,17 +8,17 @@ public class SimpleEdge<T> implements Edge<T> {
     private final T toNode
 
     public SimpleEdge(T fromNode, T toNode) {
-        fromNode = fromNode
-        toNode = toNode
+        this.fromNode = fromNode
+        this.toNode = toNode
     }
 
     @Override
-    T getFrom() {
+    public T getFrom() {
         fromNode
     }
 
     @Override
-    T getTo() {
+    public T getTo() {
         toNode
     }
 

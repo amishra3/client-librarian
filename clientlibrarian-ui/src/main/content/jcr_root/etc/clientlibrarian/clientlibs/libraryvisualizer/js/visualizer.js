@@ -1,5 +1,17 @@
 
-$('document').ready(function() {
+var respToGraph = function(resp) {
+
+// TODO : look at (http://bl.ocks.org/mbostock/3750558) for how nodes should be, need to take response and trans into that format
+
+     return {
+         nodes: [],
+         links: []
+     };
+
+};
+
+
+$(document).ready(function() {
 
     var width = 960,
         height = 500;
@@ -20,62 +32,28 @@ $('document').ready(function() {
     var link = svg.selectAll('.link'),
         node = svg.selectAll('.node');
 
-// TODO : grab this graph JSON from server
-    var graph = {
-        'nodes': [
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {}
-        ],
-        'links': [
-            {'source':  0, 'target':  1},
-            {'source':  1, 'target':  2},
-            {'source':  2, 'target':  0},
-            {'source':  1, 'target':  3},
-            {'source':  3, 'target':  2},
-            {'source':  3, 'target':  4},
-            {'source':  4, 'target':  5},
-            {'source':  5, 'target':  6},
-            {'source':  5, 'target':  7},
-            {'source':  6, 'target':  7},
-            {'source':  6, 'target':  8},
-            {'source':  7, 'target':  8},
-            {'source':  9, 'target':  4},
-            {'source':  9, 'target': 11},
-            {'source':  9, 'target': 10},
-            {'source': 10, 'target': 11},
-            {'source': 11, 'target': 12},
-            {'source': 12, 'target': 10}
-        ]
-    };
+// TODO : this all needs to be refactored
+    var pagePath = '/content/home';
+    d3.json('/bin/clientlibrarian/graph.json?page.path=' + pagePath, function(error, resp) {
 
+        var graph = respToGraph(resp);
 
+        force
+            .nodes(graph.nodes)
+            .links(graph.edges)
+            .start();
 
-    force
-        .nodes(graph.nodes)
-        .links(graph.links)
-        .start();
+        link = link.data(graph.links)
+            .enter().append('line')
+            .attr('class', 'link');
 
-    link = link.data(graph.links)
-        .enter().append('line')
-        .attr('class', 'link');
-
-    node = node.data(graph.nodes)
-        .enter().append('circle')
-        .attr('class', 'node')
-        .attr('r', 12)
-        .on('dblclick', dblclick)
-        .call(drag);
+        node = node.data(graph.nodes)
+            .enter().append('circle')
+            .attr('class', 'node')
+            .attr('r', 12)
+            .on('dblclick', dblclick)
+            .call(drag);
+    });
 
     function tick() {
         link.attr('x1', function(d) { return d.source.x; })
