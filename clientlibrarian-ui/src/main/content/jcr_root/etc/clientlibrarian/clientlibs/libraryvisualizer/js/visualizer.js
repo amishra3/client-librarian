@@ -1,17 +1,53 @@
 
-var respToGraph = function(resp) {
+var edgeFromRespToLink = function (nodes, edge) {
 
-// TODO : look at (http://bl.ocks.org/mbostock/3750558) for how nodes should be, need to take response and trans into that format
+    var link = {
+        type: edge.type
+    };
 
-     return {
-         nodes: [],
-         links: []
-     };
+    for (var i = 0; i < nodes.length; i++) {
+
+        var currNode = nodes[i];
+        if(typeof(link.source) === "undefined" && edge.from === currNode.id) {
+
+            link.source = i;
+
+        }
+
+        if(typeof(link.target) === "undefined" && edge.to === currNode.id) {
+
+            link.target = i;
+
+        }
+
+    }
+
+    return link;
+
+};
+
+var respToGraph = function (resp) {
+
+    var graph = {};
+
+    // put nodes as they are into graph
+    graph.nodes = resp.nodes;
+
+    // transform edges to links for force graph
+    graph.links = [];
+    for (var i = 0; i < resp.edges.length; i++) {
+
+        var link = edgeFromRespToLink(graph.nodes, resp.edges[i]);
+        graph.links.push(link);
+
+    }
+
+    return graph;
 
 };
 
 
-$(document).ready(function() {
+$(document).ready(function () {
 
     var width = 960,
         height = 500;
@@ -40,16 +76,16 @@ $(document).ready(function() {
 
         force
             .nodes(graph.nodes)
-            .links(graph.edges)
+            .links(graph.links)
             .start();
 
         link = link.data(graph.links)
             .enter().append('line')
-            .attr('class', 'link');
+            .attr('class', function (d) { return 'link ' + d.type; });
 
         node = node.data(graph.nodes)
             .enter().append('circle')
-            .attr('class', 'node')
+            .attr('class', function (d) { return 'node ' + d.type; })
             .attr('r', 12)
             .on('dblclick', dblclick)
             .call(drag);

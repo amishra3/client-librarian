@@ -8,11 +8,35 @@
     fill: #000;
 }
 
+.node.component {
+    fill: #f00;
+}
+
+.node.library {
+    fill: #0f0;
+}
+
+.node.category {
+    fill: #00f;
+}
+
 .link {
-    stroke: steelblue;
+    stroke: #000;
     stroke-opacity: .4;
     fill: none;
     pointer-events: none;
+}
+
+.link.dependsOn {
+    stroke: #f00;
+}
+
+.link.memberOf {
+    stroke: #0f0;
+}
+
+.link.embeds {
+    stroke: #00f;
 }
 
 .node:hover,
