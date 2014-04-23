@@ -86,13 +86,15 @@ $(document).ready(function () {
                 .links(graph.links)
                 .start();
 
-            var link = svg.selectAll('.link').data(graph.links).enter();
+            var link = svg.selectAll('.link')
+                .data(graph.links)
+                .enter().append('g')
+                .attr('class', 'link');
 
             link.append('line')
-                .attr('class', function (d) { return 'link ' + d.type; });
+                .attr('class', function (d) { return d.type; });
 
             link.append('text')
-                .attr('dx', 12)
                 .attr('dy', '.35em')
                 .text(function (d) { return d.type; });
 
@@ -117,10 +119,21 @@ $(document).ready(function () {
             var link = svg.selectAll('.link'),
                 node = svg.selectAll('.node');
 
-            link.attr('x1', function(d) { return d.source.x; })
+            link.select('line')
+                .attr('x1', function(d) { return d.source.x; })
                 .attr('y1', function(d) { return d.source.y; })
                 .attr('x2', function(d) { return d.target.x; })
                 .attr('y2', function(d) { return d.target.y; });
+
+            link.select('text')
+                .attr('x', function (d) {
+                    var dx = Math.abs(d.source.x - d.target.x) / 2;
+                    return (d.source.x > d.target.x) ? d.source.x - dx : d.source.x + dx;
+                })
+                .attr('y', function (d) {
+                    var dy = Math.abs(d.source.y - d.target.y) / 2;
+                    return (d.source.y > d.target.y) ? d.source.y - dy : d.source.y + dy;
+                });
 
             node.select('circle')
                 .attr('cx', function(d) { return d.x; })
