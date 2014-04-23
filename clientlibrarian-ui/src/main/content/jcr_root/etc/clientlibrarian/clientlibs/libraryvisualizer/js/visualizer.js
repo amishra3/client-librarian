@@ -49,57 +49,70 @@ var respToGraph = function (resp) {
 
 $(document).ready(function () {
 
-    var width = 960,
-        height = 500;
+    var container = d3.select('#visualizationContainer');
 
-    var force = d3.layout.force()
-        .size([width, height])
-        .charge(-400)
-        .linkDistance(40)
-        .on('tick', tick);
+    $('#formGraphProperties').submit(function (e) {
 
-    var drag = force.drag()
-        .on('dragstart', dragstart);
+        // clear out current container
+        container.html('');
 
-    var svg = d3.select('body').append('svg')
-        .attr('width', width)
-        .attr('height', height);
+        var width = 960,
+            height = 500;
 
-    var link = svg.selectAll('.link'),
-        node = svg.selectAll('.node');
+        var force = d3.layout.force()
+            .size([width, height])
+            .charge(-400)
+            .linkDistance(40)
+            .on('tick', tick);
 
-// TODO : this all needs to be refactored
-    var pagePath = '/content/home';
-    d3.json('/bin/clientlibrarian/graph.json?page.path=' + pagePath, function(error, resp) {
+        var drag = force.drag()
+            .on('dragstart', dragstart);
 
-        var graph = respToGraph(resp);
+        // append new svg
+        var svg = container.append('svg')
+            .attr('width', width)
+            .attr('height', height);
 
-        force
-            .nodes(graph.nodes)
-            .links(graph.links)
-            .start();
+        var link = svg.selectAll('.link'),
+            node = svg.selectAll('.node');
 
-        link = link.data(graph.links)
-            .enter().append('line')
-            .attr('class', function (d) { return 'link ' + d.type; });
+        var $form = $(this);
+        var pagePath = $form.find('#pagePath').val();
+        d3.json('/bin/clientlibrarian/graph.json?page.path=' + pagePath, function(error, resp) {
 
-        node = node.data(graph.nodes)
-            .enter().append('circle')
-            .attr('class', function (d) { return 'node ' + d.type; })
-            .attr('r', 12)
-            .on('dblclick', dblclick)
-            .call(drag);
+            var graph = respToGraph(resp);
+
+            force
+                .nodes(graph.nodes)
+                .links(graph.links)
+                .start();
+
+            link = link.data(graph.links)
+                .enter().append('line')
+                .attr('class', function (d) { return 'link ' + d.type; });
+
+            node = node.data(graph.nodes)
+                .enter().append('circle')
+                .attr('class', function (d) { return 'node ' + d.type; })
+                .attr('r', 12)
+                .on('dblclick', dblclick)
+                .call(drag);
+        });
+
+        function tick() {
+            link.attr('x1', function(d) { return d.source.x; })
+                .attr('y1', function(d) { return d.source.y; })
+                .attr('x2', function(d) { return d.target.x; })
+                .attr('y2', function(d) { return d.target.y; });
+
+            node.attr('cx', function(d) { return d.x; })
+                .attr('cy', function(d) { return d.y; });
+        }
+
+        // stop normal submit action
+        e.preventDefault();
+
     });
-
-    function tick() {
-        link.attr('x1', function(d) { return d.source.x; })
-            .attr('y1', function(d) { return d.source.y; })
-            .attr('x2', function(d) { return d.target.x; })
-            .attr('y2', function(d) { return d.target.y; });
-
-        node.attr('cx', function(d) { return d.x; })
-            .attr('cy', function(d) { return d.y; });
-    }
 
     function dblclick(d) {
         d3.select(this).classed('fixed', d.fixed = false);
