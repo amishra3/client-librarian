@@ -44,7 +44,7 @@ class DefaultResourceDependencyProvider implements ResourceDependencyProvider {
             String fullComponentPath = getFullPathToComponentForResourceType(currentComponentType, searchPaths, dependentComponentsByComponentPathMap.keySet())
 
             if (fullComponentPath == null) {
-                LOG.error("No full component path was found for component type " + currentComponentType)
+                LOG.debug("No full component path was found for component type " + currentComponentType)
                 return
             }
 
