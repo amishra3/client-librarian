@@ -191,9 +191,9 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
                 return compiledCssLibrary
             }
             else if ( type == LibraryType.JS ) {
-                String transformedJsLibrary = compileJSClientLibrary( root, filteredDependencies )
+                String compiledJsLibrary = compileJSClientLibrary( root, filteredDependencies )
 
-                return transformedJsLibrary
+                return compiledJsLibrary
 
             }
 
