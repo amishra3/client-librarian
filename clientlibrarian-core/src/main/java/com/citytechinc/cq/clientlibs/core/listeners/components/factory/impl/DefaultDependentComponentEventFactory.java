@@ -103,10 +103,10 @@ public class DefaultDependentComponentEventFactory implements DependentComponent
     }
 
     protected DependentComponentEvent makeForPropertyRemovedEvent(Event event, Map<String, DependentComponent> dependentComponentByPathMap) throws RepositoryException {
-        String propertyName = event.getPath().substring(event.getPath().lastIndexOf("/"));
+        String propertyName = event.getPath().substring(event.getPath().lastIndexOf("/") + 1);
 
         if (Properties.CLIENT_LIBRARY_DEPENDENCIES.equals(propertyName)) {
-            String nodePath = event.getPath().substring(0, event.getPath().lastIndexOf("/") - 1);
+            String nodePath = event.getPath().substring(0, event.getPath().lastIndexOf("/"));
             if (dependentComponentByPathMap.containsKey(nodePath)) {
                 return new RemovedDependentComponentEvent();
             }

@@ -14,6 +14,26 @@
 	<packaging>pom</packaging>
 	<version>1.0.0-SNAPSHOT</version>
 	<name>The AEM Client-Librarian</name>
+    <description>A Dependency Management Application for Client Side Libraries.</description>
+
+    <organization>
+        <name>CITYTECH, Inc.</name>
+        <url>http://www.citytechinc.com</url>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:git@github.com:Citytechinc/client-librarian.git</connection>
+        <developerConnection>scm:git:git@github.com:Citytechinc/client-librarian.git</developerConnection>
+        <url>https://github.com/Citytechinc/client-librarian.git</url>
+    </scm>
 
 	<modules>
         <module>clientlibrarian-api</module>
