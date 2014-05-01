@@ -1,9 +1,13 @@
 package com.citytechinc.cq.clientlibs.core.services.clientlibs.impl
 
+import com.citytechinc.cq.clientlibs.api.events.library.factory.ClientLibraryEventFactory
 import com.citytechinc.cq.clientlibs.core.domain.library.ClientLibraries
 import com.citytechinc.cq.clientlibs.api.domain.library.ClientLibrary
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ClientLibraryManager
+import com.citytechinc.cq.clientlibs.core.listeners.library.factory.impl.DefaultClientLibraryEventFactory
+import com.citytechinc.cq.clientlibs.core.listeners.library.impl.ClientLibraryEventListener
 import com.google.common.collect.ImmutableMap
+import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Sets
 import org.apache.felix.scr.annotations.Activate
 import org.apache.felix.scr.annotations.Component
@@ -16,6 +20,7 @@ import org.apache.sling.jcr.api.SlingRepository
 
 import javax.jcr.RepositoryException
 import javax.jcr.Session
+import javax.jcr.observation.ObservationManager
 import javax.jcr.query.Query
 import javax.jcr.query.QueryManager
 
@@ -41,6 +46,19 @@ class DefaultClientLibraryManager implements ClientLibraryManager {
     private SlingRepository repository
     private Session session
 
+    private ClientLibraryEventListener clientLibraryEventListener
+
+    @Override
+    Set<ClientLibrary> getLibraries() {
+
+        synchronized (this) {
+
+            refreshIfNotInitialized()
+            return ImmutableSet.copyOf(clientLibrarySet)
+
+        }
+    }
+
     @Override
     Set<ClientLibrary> getLibrariesForCategory(String category) {
 
@@ -48,7 +66,7 @@ class DefaultClientLibraryManager implements ClientLibraryManager {
 
             refreshIfNotInitialized()
             if (clientLibrariesByCategoryMap.containsKey(category)) {
-                return clientLibrariesByCategoryMap.get(category)
+                return ImmutableSet.copyOf(clientLibrariesByCategoryMap.get(category))
             }
 
             return Sets.newHashSet()
@@ -88,10 +106,19 @@ class DefaultClientLibraryManager implements ClientLibraryManager {
     @Activate
     protected void activate( Map<String, Object> properties ) throws RepositoryException, LoginException {
 
+        ObservationManager observationManager = administrativeSession.workspace.observationManager
+        clientLibraryEventListener = new ClientLibraryEventListener(new DefaultClientLibraryEventFactory(), this, session)
+        observationManager.addEventListener(clientLibraryEventListener, 31, "/", true, null, null, true)
+
     }
 
     @Deactivate
     protected void deactivate() {
+
+        if (clientLibraryEventListener != null) {
+            administrativeSession.workspace.observationManager.removeEventListener(clientLibraryEventListener)
+            clientLibraryEventListener = null;
+        }
 
         closeResourceResolver()
         closeSession()

@@ -17,16 +17,17 @@ import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
-public class ClientLibraryComponentListener implements EventListener {
+public class DependentComponentEventListener implements EventListener {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ClientLibraryComponentListener.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DependentComponentEventListener.class);
 
     private final DependentComponentEventFactory dependentComponentEventFactory;
     private final DependentComponentManager dependentComponentManager;
     private final Session session;
 
-    public ClientLibraryComponentListener(DependentComponentEventFactory dependentComponentEventFactory, DependentComponentManager dependentComponentManager, Session session) {
+    public DependentComponentEventListener(DependentComponentEventFactory dependentComponentEventFactory, DependentComponentManager dependentComponentManager, Session session) {
         this.dependentComponentEventFactory = dependentComponentEventFactory;
         this.dependentComponentManager = dependentComponentManager;
         this.session = session;
@@ -59,6 +60,9 @@ public class ClientLibraryComponentListener implements EventListener {
         if (dependentComponentEventList.size() > 0) {
             dependentComponentManager.requestRefresh();
         }
+
+        stopwatch.stop();
+        LOG.debug("Client Library event handling completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS) + "ms. Resulted in " + dependentComponentEventList.size() + " events");
 
     }
 

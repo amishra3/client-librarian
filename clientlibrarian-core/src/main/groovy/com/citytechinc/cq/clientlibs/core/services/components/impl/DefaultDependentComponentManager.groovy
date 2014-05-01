@@ -1,9 +1,11 @@
 package com.citytechinc.cq.clientlibs.core.services.components.impl
 
+import com.citytechinc.cq.clientlibs.api.events.components.factory.DependentComponentEventFactory
 import com.citytechinc.cq.clientlibs.core.domain.component.Components
 import com.citytechinc.cq.clientlibs.api.domain.component.DependentComponent
 import com.citytechinc.cq.clientlibs.api.services.components.DependentComponentManager
-import com.citytechinc.cq.clientlibs.core.listeners.components.impl.ClientLibraryComponentListener
+import com.citytechinc.cq.clientlibs.core.listeners.components.factory.impl.DefaultDependentComponentEventFactory
+import com.citytechinc.cq.clientlibs.core.listeners.components.impl.DependentComponentEventListener
 import com.google.common.base.Optional
 import com.google.common.collect.ImmutableMap
 import com.google.common.collect.ImmutableSet
@@ -50,7 +52,7 @@ class DefaultDependentComponentManager implements DependentComponentManager {
     private SlingRepository repository
     private Session session
 
-    private ClientLibraryComponentListener clientLibraryComponentListener
+    private DependentComponentEventListener clientLibraryComponentListener
 
     @Override
     Optional<DependentComponent> getDependentComponentForResource(Resource r) {
@@ -118,7 +120,7 @@ class DefaultDependentComponentManager implements DependentComponentManager {
     protected void activate( Map<String, Object> properties ) throws RepositoryException, LoginException {
 
         ObservationManager observationManager = administrativeSession.workspace.observationManager
-        clientLibraryComponentListener = new ClientLibraryComponentListener(null, this)
+        clientLibraryComponentListener = new DependentComponentEventListener(new DefaultDependentComponentEventFactory(), this, session)
         observationManager.addEventListener(clientLibraryComponentListener, 31, "/", true, null, null, true)
 
     }
@@ -128,6 +130,7 @@ class DefaultDependentComponentManager implements DependentComponentManager {
 
         if ( clientLibraryComponentListener != null ) {
             administrativeSession.workspace.observationManager.removeEventListener(clientLibraryComponentListener)
+            clientLibraryComponentListener = null
         }
 
         closeResourceResolver()
