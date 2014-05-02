@@ -1,6 +1,7 @@
 package com.citytechinc.cq.clientlibs.api.domain.library;
 
 import com.citytechinc.cq.clientlibs.api.domain.sling.runmode.SlingRunModeGroup;
+import com.google.common.base.Optional;
 
 import java.util.List;
 import java.util.Set;
@@ -91,4 +92,14 @@ public interface ClientLibrary {
      * @return True if the library should be included based on the run modes provided, false otherwise
      */
     public Boolean isIncludedForRunModes(Set<String> runModes);
+
+    /**
+     * Determines whether the library should be included based on the provided brand identifier.  A library
+     * is included if it either does not belong to any particular brand or if it belongs to the brand requested.
+     * In the case that no brand is requested, the behavior is the same as requesting the special "default" brand.
+     *
+     * @param brand The requested brand
+     * @return True if the library should be included based on the brand requested, false otherwise
+     */
+    public Boolean isIncludedForBrand(Optional<String> brand);
 }

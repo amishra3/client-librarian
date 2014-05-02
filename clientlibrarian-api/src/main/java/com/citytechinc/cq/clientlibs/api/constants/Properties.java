@@ -8,5 +8,6 @@ public class Properties {
     public static final String CLIENT_LIBRARY_EMBED = "embed";
     public static final String CLIENT_LIBRARY_DEPENDENCIES = "dependencies";
     public static final String CLIENT_LIBRARY_RUN_MODES = "runModes";
+    public static final String CLIENT_LIBRARY_BRANDS = "brands";
 
 }
