@@ -120,6 +120,14 @@ public class DefaultClientLibraryEventFactory implements ClientLibraryEventFacto
                 return new ClientLibraryRunModesModificationEvent();
             }
 
+            if (Properties.CLIENT_LIBRARY_BRANDS.equals(property.getName())) {
+                return new ClientLibraryBrandModificationEvent();
+            }
+
+            if (Properties.CLIENT_LIBRARY_CONDITIONAL_DEPENDENCIES.equals(property.getName())) {
+                return new ClientLibraryConditionalDependencyModificationEvent();
+            }
+
         }
 
         return null;
@@ -155,6 +163,14 @@ public class DefaultClientLibraryEventFactory implements ClientLibraryEventFacto
                 return new ClientLibraryRunModesModificationEvent();
             }
 
+            if (Properties.CLIENT_LIBRARY_BRANDS.equals(property.getName())) {
+                return new ClientLibraryBrandModificationEvent();
+            }
+
+            if (Properties.CLIENT_LIBRARY_CONDITIONAL_DEPENDENCIES.equals(property.getName())) {
+                return new ClientLibraryConditionalDependencyModificationEvent();
+            }
+
         }
 
         /*
@@ -186,20 +202,31 @@ public class DefaultClientLibraryEventFactory implements ClientLibraryEventFacto
 
         if (clientLibrariesByPathMap.containsKey(event.getPath().substring(0, event.getPath().lastIndexOf("/")))) {
 
-            if (event.getPath().endsWith(Properties.CLIENT_LIBRARY_DEPENDENCIES)) {
+            String propertyName = event.getPath().substring(event.getPath().lastIndexOf("/") + 1);
+
+            if (Properties.CLIENT_LIBRARY_DEPENDENCIES.equals(propertyName)) {
                 return new ClientLibraryDependencyModificationEvent();
             }
 
-            if (event.getPath().endsWith(Properties.CLIENT_LIBRARY_EMBED)) {
+            if (Properties.CLIENT_LIBRARY_EMBED.equals(propertyName)) {
                 return new ClientLibraryEmbedsModificationEvent();
             }
 
-            if (event.getPath().endsWith(Properties.CLIENT_LIBRARY_RUN_MODES)) {
+            if (Properties.CLIENT_LIBRARY_RUN_MODES.equals(propertyName)) {
                 return new ClientLibraryRunModesModificationEvent();
             }
 
-            if (event.getPath().endsWith(Properties.CLIENT_LIBRARY_CATEGORIES)) {
+            if (Properties.CLIENT_LIBRARY_CATEGORIES.equals(propertyName)) {
                 return new ClientLibraryRemovalEvent();
+            }
+
+
+            if (Properties.CLIENT_LIBRARY_BRANDS.equals(propertyName)) {
+                return new ClientLibraryBrandModificationEvent();
+            }
+
+            if (Properties.CLIENT_LIBRARY_CONDITIONAL_DEPENDENCIES.equals(propertyName)) {
+                return new ClientLibraryConditionalDependencyModificationEvent();
             }
 
         }

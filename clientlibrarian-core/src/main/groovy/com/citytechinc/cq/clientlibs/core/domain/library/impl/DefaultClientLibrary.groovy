@@ -45,6 +45,7 @@ class DefaultClientLibrary implements ClientLibrary {
     private Resource clientLibraryResource
     private List<String> embeddedCategories
     private List<String> dependencies
+    private List<String> conditionalDependencies
 
     private boolean isCssLibrary
     private boolean isJsLibrary
@@ -69,12 +70,14 @@ class DefaultClientLibrary implements ClientLibrary {
             Resource clientLibraryResource,
             List<String> embeddedCategories,
             List<String> dependencies,
+            List<String> conditionalDependencies,
             Set<SlingRunModeGroup> runModeGroups,
             Set<String> brands ) {
         this.categories = categories
         this.clientLibraryResource = clientLibraryResource
         this.embeddedCategories = embeddedCategories
         this.dependencies = dependencies
+        this.conditionalDependencies = conditionalDependencies
 
         this.runModeGroups = runModeGroups
         this.brands = brands
@@ -413,6 +416,11 @@ class DefaultClientLibrary implements ClientLibrary {
 
     public List<String> getDependencies() {
         dependencies
+    }
+
+    @Override
+    List<String> getConditionalDependencies() {
+        conditionalDependencies
     }
 
     @Override

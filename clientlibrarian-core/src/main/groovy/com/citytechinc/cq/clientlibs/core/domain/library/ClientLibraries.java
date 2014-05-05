@@ -23,6 +23,7 @@ public class ClientLibraries {
         Set<String> clientLibraryCategories = Sets.newHashSet(clientLibraryValueMap.get(Properties.CLIENT_LIBRARY_CATEGORIES, new String[0]));
         List<String> clientLibraryEmbeds = Lists.newArrayList(clientLibraryValueMap.get(Properties.CLIENT_LIBRARY_EMBED, new String[0]));
         List<String> clientLibraryDependencies = Lists.newArrayList(clientLibraryValueMap.get(Properties.CLIENT_LIBRARY_DEPENDENCIES, new String[0]));
+        List<String> clientLibraryConditionalDependencies = Lists.newArrayList(clientLibraryValueMap.get(Properties.CLIENT_LIBRARY_CONDITIONAL_DEPENDENCIES, new String[0]));
         Set<String> clientLibrarySlingRunModes = Sets.newHashSet(clientLibraryValueMap.get(Properties.CLIENT_LIBRARY_RUN_MODES, new String[0]));
         Set<String> clientLibraryBrands = Sets.newHashSet(clientLibraryValueMap.get(Properties.CLIENT_LIBRARY_BRANDS, new String[0]));
 
@@ -32,13 +33,13 @@ public class ClientLibraries {
             slingRunModeGroupSet.add(SlingRunModeGroups.forCompositeRunMode(currentCompositeRunMode));
         }
 
-        return new DefaultClientLibrary(clientLibraryCategories, clientLibraryResource, clientLibraryEmbeds, clientLibraryDependencies, slingRunModeGroupSet, clientLibraryBrands);
+        return new DefaultClientLibrary(clientLibraryCategories, clientLibraryResource, clientLibraryEmbeds, clientLibraryDependencies, clientLibraryConditionalDependencies, slingRunModeGroupSet, clientLibraryBrands);
 
     }
 
-    public static ClientLibrary newDefaultClientLibrary(Set<String> categories, Resource clientLibraryResource, List<String> embeddedCategories, List<String> dependencies, Set<SlingRunModeGroup> slingRunModeGroups, Set<String> brands) {
+    public static ClientLibrary newDefaultClientLibrary(Set<String> categories, Resource clientLibraryResource, List<String> embeddedCategories, List<String> dependencies, List<String> conditionalDependencies, Set<SlingRunModeGroup> slingRunModeGroups, Set<String> brands) {
 
-        return new DefaultClientLibrary(categories, clientLibraryResource, embeddedCategories, dependencies, slingRunModeGroups, brands);
+        return new DefaultClientLibrary(categories, clientLibraryResource, embeddedCategories, dependencies, conditionalDependencies, slingRunModeGroups, brands);
 
     }
 }

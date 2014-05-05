@@ -92,20 +92,29 @@ class ClientLibraryRepositoryStateManager {
             startingPoints.addAll(currentResourceDependencyProvider.getDependenciesForResource(root))
         }
 
-        DirectedAcyclicGraph<ClientLibrary> dependencyGraph = new DirectedAcyclicGraph<ClientLibrary>();
+        DirectedAcyclicGraph<ClientLibrary> dependencyGraph = new DirectedAcyclicGraph<ClientLibrary>()
 
 
         Map<String, Set<ClientLibrary>> clientLibrariesByCategoryMap = clientLibraryManager.getLibrariesByCategory()
         List<ClientLibrary> startingPointList = Lists.newArrayList(startingPoints);
-        //TODO: See if we can clean up this visitor abstraction
-        Set<ClientLibrary> visitedLibraries = Sets.newHashSet();
+        //TODO: See if we can clean up this visitor implementation
+        Set<ClientLibrary> visitedLibraries = Sets.newHashSet()
+
+        Set<String> containedCategories = Sets.newHashSet()
+        Set<ClientLibrary> librariesWithConditionalDependencies = Sets.newHashSet()
 
         while (!startingPointList.isEmpty()) {
-            ClientLibrary curClientLibrary = startingPointList.remove(startingPointList.size() - 1);
+
+            ClientLibrary curClientLibrary = startingPointList.remove(startingPointList.size() - 1)
 
             //Only process the Client Library if it has not yet been visited.
             if (!visitedLibraries.contains(curClientLibrary)) {
                 visitedLibraries.add(curClientLibrary)
+
+                //If this library has Conditional Dependencies add it to the set to be processed later
+                if (!curClientLibrary.conditionalDependencies.empty) {
+                    librariesWithConditionalDependencies.add(curClientLibrary)
+                }
 
                 if (!dependencyGraph.contains(curClientLibrary)) {
 
@@ -169,6 +178,31 @@ class ClientLibraryRepositoryStateManager {
             }
 
         }
+
+        /*
+         * Handling of Conditional Dependencies
+         *
+         * Iterate through the set of ClientLibraries which appear in the graph and have conditional dependencies.
+         * For each, iterate over the categories which they indicate to be conditional dependencies.  For each category,
+         * iterate over the libraries in the category looking to see whether each is already in the graph.  For each
+         * such library add an edge between the library with the conditional dependency and the library which is that
+         * dependency.
+         */
+        librariesWithConditionalDependencies.each( { ClientLibrary currentLibraryWithConditionalDependency ->
+
+            currentLibraryWithConditionalDependency.conditionalDependencies.each( { String currentConditionalDependencyCategory ->
+
+                clientLibrariesByCategoryMap.get(currentConditionalDependencyCategory).each( { ClientLibrary currentLibraryInConditionalDependency ->
+
+                    if (dependencyGraph.contains(currentLibraryInConditionalDependency)) {
+                        dependencyGraph.addEdge(currentLibraryWithConditionalDependency, currentLibraryInConditionalDependency)
+                    }
+
+                } )
+
+            } )
+
+        } )
 
         return dependencyGraph.order( true );
 
