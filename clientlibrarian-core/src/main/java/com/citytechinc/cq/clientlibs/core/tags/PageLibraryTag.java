@@ -123,4 +123,11 @@ public class PageLibraryTag extends TagSupport {
         this.type = type;
     }
 
+    public String getBrand() {
+        return this.brand;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
 }
