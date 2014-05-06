@@ -34,9 +34,9 @@ This can be installed via the Package Manager.
 
 The Client-Librarian produces and delivers page specific CSS and JavaScript libraries via a servlet listening for
 page resource requests with a selector of ```pagelib```.   Whether a CSS or JavaScript file is produced is based on the
-extension of the requested URL.  For example, if your page resides at /content/tacodan/home/products/tacos, the URL
-for the CSS page library will be /content/tacodan/home/products/tacos.pagelib.css.  Similarly the URL for the JavaScript
-page library will be /content/tacodan/home/products/tacos.pagelib/js.
+extension of the requested URL.  For example, if your page resides at */content/tacodan/home/products/tacos*, the URL
+for the CSS page library will be */content/tacodan/home/products/tacos.pagelib.css*.  Similarly the URL for the JavaScript
+page library will be */content/tacodan/home/products/tacos.pagelib/js*.
 
 ### Page Library JSP Tag
 
@@ -49,9 +49,9 @@ The following options are available for the Tag
 Attribute | Type                          | Required | Description
 --------- | ----                          | -------- | -----------
 type      | One of "css", "js", or "both" | Optional | Indicates whether you want to include the CSS or JavaScript page library, or both.  Omitting this attribute has the same effect as setting it to "both".
-brand     | String                        | Optional | The Brand Identifier indicating a request for a Branded Page Library.  See Branded Libraries below.
+brand     | String                        | Optional | The Brand Identifier indicating a request for a Branded Page Library.  See [Branded Libraries](#branded-libraries) below.
 
-### Declaring Component's Dependency on Client Libraries
+### Declaring Component Dependencies on Client Libraries
 
 At a high level, the Client Librarian builds up a Page Specific Library by inspecting the components represented on a
 page, determining their Client Library dependencies, and building those dependencies into a Page Specific Library.
@@ -70,7 +70,7 @@ libraries.
 
 ### Refreshing the Client Librarian
 
-The Client Librarian exposes some basic library statistics as well as a "Refresh" button in the ClientLibraryRepositoryReportingAndMaintenanceMBean
+The Client Librarian exposes some basic library statistics as well as a "Refresh" button in the **ClientLibraryRepositoryReportingAndMaintenanceMBean**
 accessible via the Felix JMX Board.  The "Refresh" button is useful in situations where you are seeing unexpected results
 in your rendered page specific libraries and want to make sure that said results are not caused by old data in the Librarian
 itself.  Refreshing the Client Librarian clears any in memory cache of known libraries and components and forces the Librarian
@@ -80,7 +80,7 @@ to re-query the repository for Client Libraries and components.
 
 ### LESS Compilation
 
-If your CSS Client Libraries include files with a .less extension, the Client Librarian will treat the library as a
+If your CSS Client Libraries include files with a ```.less``` extension, the Client Librarian will treat the library as a
 LESS Library and will run a LESS compiler on the library after all of the files which make up the library have been
 put together in the proper order.
 
@@ -104,8 +104,8 @@ in the URL of the Page Library.  This selector is added for you when the ```bran
 JSP tag is set.  Declaring the brand of a Client Library is done by setting a ```brand``` property on the Client Library
 node to 1 to many Brand Identifiers.  Doing so makes the library a "Branded Library" (as opposed to an "Unbranded Library").
 During Library compilation, if a specific brand was requested, the Client Librarian will include Unbranded Libraries and
-any Branded Libraries who contain the requested brand in their set of brands.  If no brand was requested, the Client Librarian
-will include all Unbranded Libraries and any Branded Libraries who include the "default" brand in their set of brands.
+any Branded Libraries which contain the requested brand in their set of brands.  If no brand was requested, the Client Librarian
+will include all Unbranded Libraries and any Branded Libraries which include the "default" brand in their set of brands.
 Branded Libraries which do not include the "default" brand in their set of brands will not be included in an Unbranded
 Page Library request.
 
@@ -117,22 +117,22 @@ publish.  Using the ```runModes``` property you can dictate which Sling Run Mode
 in.  This property is set on the Client Library node itself and may be set to 1 to many Sling Run Mode Identifiers.
 If no runModes property is specified for a given Client Library then it is assumed that the Library should be included
 in all run modes.  The run mode specified in this property may either be a single run mode such as ```author``` or a
-composite run mode such as ```dev.node1.publish```.  If the property is set to a composite run mode then, in order to be
-included, the environment in which the Librarian is run must be running in all of the run modes indicated by the composite.
-For example, for a Client Library with a ```runModes``` property of ```dev.node1.publish``` to be included, the AEM
-environment must be running with all three run modes: dev, node1, and publish.
+composite run mode such as ```dev.node1.publish```.  If the property is set to a composite run mode then the Library will
+only be included in environments running in all of the modes specified by the composite.
+For example, a Client Library with a ```runModes``` property of ```dev.node1.publish``` will be included if the AEM
+environment is running in all three run modes: dev, node1, and publish.
 
 ### Library Versioning
 
-Coming Soon
+*Coming Soon*
 
 ## Advanced Usage
 
 
 ### Resource Dependency Providers
 
-Above, the process which the Client Librarian undertook to determine the Client Library dependencies for a given page
-was described at a high level and involved inspecting the resources on a page and determining the Client Library dependencies
+Above, the process which the Client Librarian undertakes to determine the Client Library dependencies for a given page
+is described at a high level and involves inspecting the resources on a page and determining the Client Library dependencies
 of the components represented by these resources.  This inspection mechanism is implemented within a ```ResourceDependencyProvider```
 service.  The ```ResourceDependencyProvider``` interface exposes a single method:
 
@@ -142,7 +142,7 @@ public Set<ClientLibrary> getDependenciesForResource(Resource r)
 
 During Page Library compilation, the Client Librarian will hand to the ```ResourceDependencyProvider``` service the Resource
 representing the current page.  The ```ResourceDependencyProvider``` service is then responsible for returning the set
-of ClientLibraries which the page is dependent upon.  To extend the functionality of the Client Librarian and handle situations
+of Client Libraries which the page is dependent upon.  To extend the functionality of the Client Librarian and handle situations
 where inspection of the Resources on a page is not enough to determine the Library dependencies, you can implement your own
 ```ResourceDependencyProvider``` services.  The Client Librarian will utilize all ```ResourceDependencyProvider``` services
 existing in the OSGI environment, passing the same Resource to each and collecting a set of Client Libraries from each.
@@ -169,5 +169,5 @@ named variables.  Once bindings are collected from all known Variable Provider s
 place holder variables whose variable name matches one of the bindings provided by the Variable Provider services.  Unmatched
 place holder variables will be left un-touched.
 
-Note: if multiple Variable Provider services provide bindings for the same variable name, the behavior, specifically concerning
+**Note:** if multiple Variable Provider services provide bindings for the same variable name, the behavior, specifically concerning
 which binding "wins," is undefined.
