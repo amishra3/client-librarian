@@ -13,6 +13,8 @@ concepts introduced by the AEM Client Library mechanisms.
 * Declare dependencies between Client Libraries
 * Produce .css and .js files which are relevant to the components on a page
 * Use global LESS variables and mixins in your LESS workflow without external compilation
+* Produce multiple brands of .css and .js without unnecessary code duplication
+* Provide programmatically generated or environment specific content for .css and .js
 
 ## Requirements
 
