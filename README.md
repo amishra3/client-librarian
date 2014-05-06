@@ -95,8 +95,7 @@ directive at the top of your JavaScript files is not necessarily guaranteed to c
 mode (based on your dependency setup of course).  To force any Page Library created by the Librarian to be run in strict
 mode, the ```strictJavascript``` OSGI configuration on the ```DefaultClientLibraryRepository``` may be set to ```true```.
 Setting this configuration to ```true``` causes the ```"use strict"``` directive to be written to the top of any
-JavaScript produced by the Librarian.  While the default is false so as to not break existing JavaScript it is highly
-recommended that this be set to true as it helps catch potential errors early.
+JavaScript produced by the Librarian.  The default value for this property is ```false```.
 
 ### Branded Libraries
 

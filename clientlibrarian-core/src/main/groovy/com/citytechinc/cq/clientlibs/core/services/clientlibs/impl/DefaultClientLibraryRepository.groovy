@@ -76,7 +76,14 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
         stateManager = new ClientLibraryRepositoryStateManager( clientLibraryManager, dependentComponentManager )
 
-        strictJavascript = PropertiesUtil.toBoolean(STRICT_JAVASCRIPT, false)
+        strictJavascript = PropertiesUtil.toBoolean(properties.get(STRICT_JAVASCRIPT), false)
+
+    }
+
+    @Modified
+    protected void modified( Map<String, Object> properties ) {
+
+        strictJavascript = PropertiesUtil.toBoolean(properties.get(STRICT_JAVASCRIPT), false)
 
     }
 

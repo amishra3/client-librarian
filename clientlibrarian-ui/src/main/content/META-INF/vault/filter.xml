@@ -2,4 +2,9 @@
 <workspaceFilter version="1.0">
     <filter root="/apps/clientlibrarian/config" />
     <filter root="/apps/clientlibrarian/install" />
+    <!--
+    <filter root="/apps/clientlibrarian/install">
+        <exclude pattern="/apps/clientlibrarian/install(/.*)?"/>
+    </filter>
+    -->
 </workspaceFilter>
