@@ -12,7 +12,7 @@ concepts introduced by the AEM Client Library mechanisms.
 * Declare Component and Template dependencies on Client Libraries
 * Declare dependencies between Client Libraries
 * Produce .css and .js files which are relevant to the components on a page
-* Use global LESS variables and mixins in your LESS workflow without external compilation
+* Use global [LESS](http://lesscss.org/) variables and mixins in your LESS workflow without external compilation
 * Produce multiple brands of .css and .js without unnecessary code duplication
 * Provide programmatically generated or environment specific content for .css and .js
 
@@ -80,7 +80,7 @@ to re-query the repository for Client Libraries and components.
 
 ## Intermediate Usage
 
-### LESS Compilation
+### [LESS](http://lesscss.org/) Compilation
 
 If your CSS Client Libraries include files with a ```.less``` extension, the Client Librarian will treat the library as a
 LESS Library and will run a LESS compiler on the library after all of the files which make up the library have been
