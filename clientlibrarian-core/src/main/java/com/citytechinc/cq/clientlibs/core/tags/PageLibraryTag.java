@@ -108,11 +108,11 @@ public class PageLibraryTag extends TagSupport {
     }
 
     private Boolean buildJs() {
-        return type.equals("js") || type.equals("both") || type == null;
+        return type == null || "js".equals(type) || "both".equals(type);
     }
 
     private Boolean buildCss() {
-        return type.equals("css") || type.equals("both") || type == null;
+        return type == null || "css".equals(type) || "both".equals(type);
     }
 
     public String getType() {
