@@ -6,6 +6,7 @@
 package com.citytechinc.cq.clientlibs.core.tags;
 
 import com.citytechinc.cq.clientlibs.core.servlets.ComponentClientLibraryServlet;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.resource.Resource;
 import org.slf4j.Logger;
@@ -22,6 +23,8 @@ public class PageLibraryTag extends TagSupport {
     private static final Logger LOG = LoggerFactory.getLogger(PageLibraryTag.class);
 
     private String type;
+
+    private String brand;
 
     @Override
     public int doEndTag() throws JspTagException {
@@ -57,6 +60,12 @@ public class PageLibraryTag extends TagSupport {
         jsOutputBuilder.append(getIncludeFilePath(request));
         jsOutputBuilder.append(".");
         jsOutputBuilder.append(ComponentClientLibraryServlet.SELECTOR);
+
+        if (StringUtils.isNotBlank(brand)) {
+            jsOutputBuilder.append(".");
+            jsOutputBuilder.append(brand);
+        }
+
         jsOutputBuilder.append(".js\"></script>\n");
 
         return jsOutputBuilder.toString();
@@ -72,6 +81,12 @@ public class PageLibraryTag extends TagSupport {
         cssOutputBuilder.append(getIncludeFilePath(request));
         cssOutputBuilder.append(".");
         cssOutputBuilder.append(ComponentClientLibraryServlet.SELECTOR);
+
+        if (StringUtils.isNotBlank(brand)) {
+            cssOutputBuilder.append(".");
+            cssOutputBuilder.append(brand);
+        }
+
         cssOutputBuilder.append(".css\" ");
         cssOutputBuilder.append("rel=\"stylesheet\" ");
         cssOutputBuilder.append("type=\"text/css\"");
@@ -108,4 +123,11 @@ public class PageLibraryTag extends TagSupport {
         this.type = type;
     }
 
+    public String getBrand() {
+        return this.brand;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
 }

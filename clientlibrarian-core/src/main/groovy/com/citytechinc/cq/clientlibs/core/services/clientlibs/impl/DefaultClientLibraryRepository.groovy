@@ -17,6 +17,7 @@ import com.citytechinc.cq.clientlibs.api.services.clientlibs.transformer.Variabl
 import com.citytechinc.cq.clientlibs.api.structures.graph.DependencyGraph
 import com.citytechinc.cq.clientlibs.core.services.clientlibs.state.manager.impl.ClientLibraryRepositoryStateManager
 import com.citytechinc.cq.clientlibs.api.services.components.DependentComponentManager
+import com.google.common.base.Optional
 import com.google.common.collect.ImmutableList
 import org.apache.commons.lang.StringUtils
 import org.apache.felix.scr.annotations.*
@@ -61,9 +62,6 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     @Reference
     SlingSettingsService slingSettingsService
 
-    //@Reference
-    //private ClientLibraryEventFactory clientLibraryEventFactory
-
     private ClientLibraryRepositoryStateManager stateManager
 
     @Activate
@@ -73,20 +71,6 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
         stateManager = new ClientLibraryRepositoryStateManager( clientLibraryManager, dependentComponentManager )
 
-        /*
-         * Setup a new ClientLibraryEventListener listening for all event types on the entire repository.
-         * The listener's onEvent method will be responsible for filtering out and acting on only those events
-         * which we actually care about
-         *
-        def newEventListener = new ClientLibraryEventListener( this, clientLibraryEventFactory, getAdministrativeSession() )
-        observationManager.addEventListener(
-                newEventListener,
-                31, "/", true, null, null, true )
-
-        repositoryState.setEventListener( newEventListener )
-
-        LOG.debug( "Event listener added to observation manager" )
-         */
     }
 
     @Deactivate
@@ -168,7 +152,7 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     }
 
     @Override
-    public String compileClientLibrary(Resource root, LibraryType type) throws ClientLibraryCompilationException {
+    public String compileClientLibrary(Resource root, LibraryType type, Optional<String> brand) throws ClientLibraryCompilationException {
 
         try {
             List<ClientLibrary> dependencies = getOrderedDependencies( root )
@@ -181,7 +165,10 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
              * Filter the included libraries based on run mode
              */
             List<ClientLibrary> filteredDependencies = dependencies.findAll { ClientLibrary currentDependency ->
-                return currentDependency.isIncludedForRunModes(currentRunModes)
+
+                return currentDependency.isIncludedForRunModes(currentRunModes) &&
+                        currentDependency.isIncludedForBrand(brand)
+
             }
 
             LOG.debug( "Filtered dependencies for " + root.getPath() + " : " + filteredDependencies )
@@ -194,7 +181,7 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
             else if ( type == LibraryType.JS ) {
                 String compiledJsLibrary = compileJSClientLibrary( root, filteredDependencies )
 
-                return transformedJsLibrary
+                return compiledJsLibrary
 
             }
 

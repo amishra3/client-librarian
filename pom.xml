@@ -12,8 +12,28 @@
 	<groupId>com.citytechinc.cq.clientlibs</groupId>
 	<artifactId>clientlibrarian</artifactId>
 	<packaging>pom</packaging>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>0.2.2</version>
 	<name>The AEM Client-Librarian</name>
+    <description>A Dependency Management Application for Client Side Libraries.</description>
+
+    <organization>
+        <name>CITYTECH, Inc.</name>
+        <url>http://www.citytechinc.com</url>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:git@github.com:Citytechinc/client-librarian.git</connection>
+        <developerConnection>scm:git:git@github.com:Citytechinc/client-librarian.git</developerConnection>
+        <url>https://github.com/Citytechinc/client-librarian.git</url>
+    </scm>
 
 	<modules>
         <module>clientlibrarian-api</module>
@@ -46,8 +66,8 @@
 	<properties>
         <api.name>clientlibrarian-api</api.name>
 		<core.name>clientlibrarian-core</core.name>
-        <core.version>1.0.0-SNAPSHOT</core.version>
-        <api.version>1.0.0-SNAPSHOT</api.version>
+        <core.version>0.2.2</core.version>
+        <api.version>0.2.2</api.version>
 		<maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss.SSSZ</maven.build.timestamp.format>
 		<timestamp>${maven.build.timestamp}</timestamp>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -127,6 +147,14 @@
                 <artifactId>com.adobe.granite.jmx</artifactId>
                 <version>0.2.6</version>
                 <scope>provided</scope>
+            </dependency>
+
+            <!-- prosper testing framework -->
+            <dependency>
+                <groupId>com.citytechinc.aem.prosper</groupId>
+                <artifactId>prosper</artifactId>
+                <version>0.10.1</version>
+                <scope>test</scope>
             </dependency>
 
         </dependencies>

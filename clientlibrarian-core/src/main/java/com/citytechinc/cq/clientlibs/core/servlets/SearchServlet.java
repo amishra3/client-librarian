@@ -102,7 +102,7 @@ public class SearchServlet extends SlingSafeMethodsServlet {
             Collection<ClientLibrary> libraries =
                     categoryGiven ?
                             clientLibraryManager.getLibrariesForCategory(paramCategory)
-                            : clientLibraryManager.getAllLibraries();
+                            : clientLibraryManager.getLibraries();
 
             // loop through libraries and write them out to JSON objects
             for (ClientLibrary library : libraries) {

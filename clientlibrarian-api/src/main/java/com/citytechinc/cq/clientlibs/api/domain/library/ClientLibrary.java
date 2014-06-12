@@ -1,6 +1,7 @@
 package com.citytechinc.cq.clientlibs.api.domain.library;
 
 import com.citytechinc.cq.clientlibs.api.domain.sling.runmode.SlingRunModeGroup;
+import com.google.common.base.Optional;
 
 import java.util.List;
 import java.util.Set;
@@ -70,6 +71,46 @@ public interface ClientLibrary {
     public List<String> getDependencies();
 
     /**
+     * Provides the list of Conditional Dependencies declared for this Library.
+     *
+     * <p>
+     *     A Conditional Dependency indicates that, while the library does not necessarily depend on the
+     *     conditional dependency, when both the library and its Conditional Dependency are included in the same
+     *     compiled library, any conditional dependencies need to be ordered prior to the conditionally dependent library.
+     * </p>
+     * <p>
+     *     Consider the following practical example.
+     *     <ul>
+     *         <li>Library A contains file a.css which defines a color for the `p.confidential` selector</li>
+     *         <li>Library B contains file b.css which also defines a color for the `p.confidential` selector</li>
+     *         <li>Component A depends on Library A</li>
+     *         <li>Component B depends on Library B</li>
+     *         <li>Page A contains an instance of Component A and an instance of Component B</li>
+     *     </ul>
+     *     Since Page A contains an instance of a component which depends on Library A and an instance of a component
+     *     which depends on Library B, both libraries will be included in the Page's page library. Given that Library A
+     *     and Library B have no dependencies on each other, it should not matter in which order they are included.
+     *     However, since Library A and Library B both modify the same attribute of the same selector, this indeterminate
+     *     ordering may lead to differing results based on the pseudo-random ordering which would be produced.
+     *     Ideally the libraries are organized in such a way that such situations do not arise, however this is not
+     *     always possible, especially when working with front end frameworks or old libraries which one does not have
+     *     the time to refactor.
+     * </p>
+     * <p>
+     *     In such a case, Conditional Dependencies may be used to declare an appropriate ordering between libraries
+     *     which is to be enforced in cases where both libraries are to be included based on other criteria without
+     *     producing a direct dependency between the libraries.  In the example above, let us say that we want Library B's
+     *     color declaration to take precedence in cases where both Library A and Library B will be on a page.  To do this
+     *     we would declare that Library B has a Conditional Dependency on Library A.  This would cause Library A to be
+     *     rendered prior to Library B in cases where they are both in the page library.  In cases where only one of the two
+     *     is in the page library, this Conditional Dependency has no effect on ordering.  The Conditional Dependency never
+     *     has any effect on library inclusion.
+     * </p>
+     * @return
+     */
+    public List<String> getConditionalDependencies();
+
+    /**
      *
      * @return The set of library categories which this client library embeds.
      */
@@ -91,4 +132,14 @@ public interface ClientLibrary {
      * @return True if the library should be included based on the run modes provided, false otherwise
      */
     public Boolean isIncludedForRunModes(Set<String> runModes);
+
+    /**
+     * Determines whether the library should be included based on the provided brand identifier.  A library
+     * is included if it either does not belong to any particular brand or if it belongs to the brand requested.
+     * In the case that no brand is requested, the behavior is the same as requesting the special "default" brand.
+     *
+     * @param brand The requested brand
+     * @return True if the library should be included based on the brand requested, false otherwise
+     */
+    public Boolean isIncludedForBrand(Optional<String> brand);
 }

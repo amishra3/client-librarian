@@ -14,6 +14,7 @@ import com.citytechinc.cq.clientlibs.api.domain.library.LibraryType;
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ClientLibraryRepository;
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.ClientLibraryCompilationException;
 import com.google.common.base.Optional;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.sling.SlingServlet;
 import org.apache.sling.api.SlingHttpServletRequest;
@@ -50,13 +51,29 @@ public class ComponentClientLibraryServlet extends SlingSafeMethodsServlet {
             return;
         }
 
+        Optional<String> brand = lookupBrandForRequest(request);
+
         try {
-            String compiledLibrary = clientLibraryRepository.compileClientLibrary(request.getResource(), requestedLibraryType.get());
+            String compiledLibrary = clientLibraryRepository.compileClientLibrary(request.getResource(), requestedLibraryType.get(), brand);
             response.setContentType(requestedLibraryType.get().contentType);
             response.getWriter().write(compiledLibrary);
         } catch (ClientLibraryCompilationException e) {
             LOG.error("Error encountered requesting page library for " + request.getResource().getPath(), e);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private static Optional<String> lookupBrandForRequest(SlingHttpServletRequest request) {
+
+        String[] selectors = request.getRequestPathInfo().getSelectors();
+
+        for (String currentSelector : selectors) {
+            if (!NumberUtils.isNumber(currentSelector) && !SELECTOR.equals(currentSelector)) {
+                return Optional.of(currentSelector);
+            }
+        }
+
+        return Optional.absent();
+
     }
 }

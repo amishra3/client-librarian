@@ -17,6 +17,8 @@ public interface DependentComponentManager {
 
     public Map<String, DependentComponent> getComponentsByPath();
 
+    public Set<DependentComponent> getComponents();
+
     public void requestRefresh();
 
 }

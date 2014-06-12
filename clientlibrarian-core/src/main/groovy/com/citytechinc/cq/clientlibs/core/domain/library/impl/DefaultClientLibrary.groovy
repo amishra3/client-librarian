@@ -5,6 +5,7 @@
  */
 package com.citytechinc.cq.clientlibs.core.domain.library.impl
 
+import com.citytechinc.cq.clientlibs.api.constants.Brands
 import com.citytechinc.cq.clientlibs.api.domain.library.ClientLibrary
 import com.citytechinc.cq.clientlibs.api.domain.sling.runmode.SlingRunModeGroup
 import com.google.common.base.Optional
@@ -44,6 +45,7 @@ class DefaultClientLibrary implements ClientLibrary {
     private Resource clientLibraryResource
     private List<String> embeddedCategories
     private List<String> dependencies
+    private List<String> conditionalDependencies
 
     private boolean isCssLibrary
     private boolean isJsLibrary
@@ -61,14 +63,24 @@ class DefaultClientLibrary implements ClientLibrary {
     private Optional<String> cssIncludeFilePathOptional
 
     private Set<SlingRunModeGroup> runModeGroups
+    private Set<String> brands
 
-    def DefaultClientLibrary( Set<String> categories, Resource clientLibraryResource, List<String> embeddedCategories, List<String> dependencies, Set<SlingRunModeGroup> runModeGroups ) {
+    def DefaultClientLibrary(
+            Set<String> categories,
+            Resource clientLibraryResource,
+            List<String> embeddedCategories,
+            List<String> dependencies,
+            List<String> conditionalDependencies,
+            Set<SlingRunModeGroup> runModeGroups,
+            Set<String> brands ) {
         this.categories = categories
         this.clientLibraryResource = clientLibraryResource
         this.embeddedCategories = embeddedCategories
         this.dependencies = dependencies
+        this.conditionalDependencies = conditionalDependencies
 
         this.runModeGroups = runModeGroups
+        this.brands = brands
 
         cssResourcePaths = Sets.newLinkedHashSet()
         jsResourcePaths = Sets.newLinkedHashSet()
@@ -386,8 +398,29 @@ class DefaultClientLibrary implements ClientLibrary {
 
     }
 
+    @Override
+    Boolean isIncludedForBrand(Optional<String> brand) {
+        if (!brands.isEmpty()) {
+
+            if (brand.isPresent()) {
+                return brands.contains(brand.get())
+            }
+            else {
+                return brands.contains(Brands.DEFAULT_BRAND)
+            }
+
+        }
+
+        return true
+    }
+
     public List<String> getDependencies() {
         dependencies
+    }
+
+    @Override
+    List<String> getConditionalDependencies() {
+        conditionalDependencies
     }
 
     @Override
