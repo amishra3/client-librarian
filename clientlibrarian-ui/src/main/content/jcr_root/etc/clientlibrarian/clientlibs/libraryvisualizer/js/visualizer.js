@@ -59,6 +59,7 @@ $(document).ready(function () {
         var width = 1500,
             height = 800,
             nodeRadius = 6,
+            nodeCir = nodeRadius * 2,
             nodeTextPaddingLeft = 2,
             linkArrowHeight = 6;
 
@@ -134,12 +135,24 @@ $(document).ready(function () {
             var link = svg.selectAll('.link'),
                 node = svg.selectAll('.node');
 
+            // draw circles bounded by height and width of window
+            node.select('circle')
+                .attr('cx', function(d) { return d.x = Math.max(nodeCir, Math.min(width - nodeCir, d.x)); })
+                .attr('cy', function(d) { return d.y = Math.max(nodeCir, Math.min(height - nodeCir, d.y)); });
+
+            // draw text to the right of the circles
+            node.select('text')
+                .attr('x', function (d) { return d.x + nodeRadius + nodeTextPaddingLeft; })
+                .attr('y', function (d) { return d.y; });
+
+            // link circles with lines
             link.select('line')
                 .attr('x1', function (d) { return d.source.x; })
                 .attr('y1', function (d) { return d.source.y; })
                 .attr('x2', function (d) { return d.target.x; })
                 .attr('y2', function (d) { return d.target.y; });
 
+            // add text to middle of link lines
             link.select('text')
                 .attr('x', function (d) {
                     var dx = Math.abs(d.source.x - d.target.x) / 2;
@@ -151,14 +164,6 @@ $(document).ready(function () {
                     var yn = (d.source.y > d.target.y) ? d.source.y - dy : d.source.y + dy;
                     return yn;
                 });
-
-            node.select('circle')
-                .attr('cx', function(d) { return d.x; })
-                .attr('cy', function(d) { return d.y; });
-
-            node.select('text')
-                .attr('x', function (d) { return d.x + nodeRadius + nodeTextPaddingLeft; })
-                .attr('y', function (d) { return d.y; });
 
         }
 
