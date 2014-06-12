@@ -9,6 +9,7 @@ import com.citytechinc.cq.clientlibs.api.structures.graph.DependencyGraph;
 import com.citytechinc.cq.clientlibs.api.util.ComponentUtils;
 import com.citytechinc.cq.clientlibs.core.structures.graph.dag.EdgeType;
 import com.citytechinc.cq.clientlibs.core.util.DomainToJSONUtil;
+import com.day.cq.commons.jcr.JcrConstants;
 import com.google.common.net.MediaType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.scr.annotations.Reference;
@@ -77,9 +78,8 @@ public class GraphServlet extends SlingSafeMethodsServlet {
         // check if path resolved
         if(StringUtils.isNotBlank(paramPagePath) && !ResourceUtil.isNonExistingResource(pageResource)) {
 
-            // get graph
-            DependencyGraph<ClientLibrary> dependencyGraph
-                    = clientLibraryRepository.getClientLibraryDependencyGraph(pageResource);
+            // get content node
+            Resource jcrContentResource = pageResource.getChild(JcrConstants.JCR_CONTENT);
 
             // keep track of categories
             Set<String> categories = new HashSet<String>();
@@ -87,7 +87,7 @@ public class GraphServlet extends SlingSafeMethodsServlet {
             try {
 
                 // write components to JSON
-                for (String resourceType : ComponentUtils.getNestedComponentTypes(pageResource)) {
+                for (String resourceType : ComponentUtils.getNestedComponentTypes(jcrContentResource)) {
 
                     // get dependent component
                     DependentComponent dependentComponent =
@@ -118,6 +118,10 @@ public class GraphServlet extends SlingSafeMethodsServlet {
                     }
 
                 }
+
+                // get graph
+                DependencyGraph<ClientLibrary> dependencyGraph
+                        = clientLibraryRepository.getClientLibraryDependencyGraph(jcrContentResource);
 
                 // write client libraries to JSON
                 for (ClientLibrary clientLibrary : dependencyGraph.getNodes()) {

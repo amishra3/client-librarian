@@ -13,12 +13,14 @@ import javax.servlet.http.HttpServletResponse;
 import com.citytechinc.cq.clientlibs.api.domain.library.LibraryType;
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ClientLibraryRepository;
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.ClientLibraryCompilationException;
+import com.day.cq.commons.jcr.JcrConstants;
 import com.google.common.base.Optional;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.sling.SlingServlet;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +56,9 @@ public class ComponentClientLibraryServlet extends SlingSafeMethodsServlet {
         Optional<String> brand = lookupBrandForRequest(request);
 
         try {
-            String compiledLibrary = clientLibraryRepository.compileClientLibrary(request.getResource(), requestedLibraryType.get(), brand);
+            final Resource jcrContent = request.getResource().getChild(JcrConstants.JCR_CONTENT);
+
+            String compiledLibrary = clientLibraryRepository.compileClientLibrary(jcrContent, requestedLibraryType.get(), brand);
             response.setContentType(requestedLibraryType.get().contentType);
             response.getWriter().write(compiledLibrary);
         } catch (ClientLibraryCompilationException e) {

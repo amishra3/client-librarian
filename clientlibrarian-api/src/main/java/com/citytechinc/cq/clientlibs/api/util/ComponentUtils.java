@@ -43,6 +43,7 @@ public class ComponentUtils {
         QueryResult componentQueryResult = componentQuery.execute();
 
         Set<String> retSet = new HashSet<String>();
+        retSet.add(root.getResourceType());
 
         RowIterator resultIterator = componentQueryResult.getRows();
 

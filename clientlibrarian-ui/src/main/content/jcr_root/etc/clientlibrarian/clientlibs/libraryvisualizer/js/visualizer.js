@@ -56,8 +56,8 @@ $(document).ready(function () {
         // clear out current container
         container.html('');
 
-        var width = 960,
-            height = 500,
+        var width = 1500,
+            height = 800,
             nodeRadius = 6,
             nodeTextPaddingLeft = 2,
             linkArrowHeight = 6;
