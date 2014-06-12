@@ -32,6 +32,8 @@ import org.slf4j.LoggerFactory
 import javax.jcr.RepositoryException
 import javax.jcr.query.InvalidQueryException
 
+import org.apache.sling.commons.osgi.PropertiesUtil
+
 /**
  *
  */
@@ -62,6 +64,10 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     @Reference
     SlingSettingsService slingSettingsService
 
+    @Property(label = "Strict Javascript", boolValue = false, description = "When set to true rendered JavaScript page libraries will start with a 'strict' directive")
+    private static final String STRICT_JAVASCRIPT = "strictJavascript"
+    private Boolean strictJavascript
+
     private ClientLibraryRepositoryStateManager stateManager
 
     @Activate
@@ -70,6 +76,15 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         LOG.debug( "Activating Service" )
 
         stateManager = new ClientLibraryRepositoryStateManager( clientLibraryManager, dependentComponentManager )
+
+        strictJavascript = PropertiesUtil.toBoolean(properties.get(STRICT_JAVASCRIPT), false)
+
+    }
+
+    @Modified
+    protected void modified( Map<String, Object> properties ) {
+
+        strictJavascript = PropertiesUtil.toBoolean(properties.get(STRICT_JAVASCRIPT), false)
 
     }
 
@@ -255,6 +270,10 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     private String compileJSClientLibrary( Resource root, List<ClientLibrary> dependencies ) {
 
         StringBuffer mergedClientLibraries = new StringBuffer();
+
+        if (strictJavascript) {
+            mergedClientLibraries.append("\"use strict\";").append("\n")
+        }
 
         for (ClientLibrary curClientLibrary : dependencies) {
             if (curClientLibrary.hasJs()) {
