@@ -12,7 +12,7 @@
 	<groupId>com.citytechinc.cq.clientlibs</groupId>
 	<artifactId>clientlibrarian</artifactId>
 	<packaging>pom</packaging>
-	<version>0.3.0</version>
+	<version>0.4.0-SNAPSHOT</version>
 	<name>The AEM Client-Librarian</name>
     <description>A Dependency Management Application for Client Side Libraries.</description>
 
@@ -66,8 +66,8 @@
 	<properties>
         <api.name>clientlibrarian-api</api.name>
 		<core.name>clientlibrarian-core</core.name>
-        <core.version>0.3.0</core.version>
-        <api.version>0.3.0</api.version>
+        <core.version>0.4.0-SNAPSHOT</core.version>
+        <api.version>0.4.0-SNAPSHOT</api.version>
 		<maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss.SSSZ</maven.build.timestamp.format>
 		<timestamp>${maven.build.timestamp}</timestamp>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
