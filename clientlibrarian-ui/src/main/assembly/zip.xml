@@ -44,10 +44,4 @@
             <useStrictFiltering>true</useStrictFiltering>
         </dependencySet>
     </dependencySets>
-    <files>
-        <file>
-            <source>src/main/filters/filter.xml</source>
-            <outputDirectory>META-INF/vault</outputDirectory>
-        </file>
-    </files>
 </assembly>
