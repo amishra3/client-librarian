@@ -1,31 +1,51 @@
 
+/**
+ * Transform an edge from graph response into a link for d3.
+ *
+ * @param nodes     List of nodes in graph.
+ * @param edge      Edge definition from response.
+ * @returns {{type: *}}     Link to add to visual graph.
+ */
 var edgeFromRespToLink = function (nodes, edge) {
 
+    // begin link object
     var link = {
         type: edge.type
     };
 
+    // loop through nodes to find which ones need to be connected
     for (var i = 0; i < nodes.length; i++) {
 
+        // get current node
         var currNode = nodes[i];
+
         if(typeof(link.source) === "undefined" && edge.from === currNode.id) {
 
+            // edge.from is the current node, set the link's source
             link.source = i;
 
         }
 
         if(typeof(link.target) === "undefined" && edge.to === currNode.id) {
 
+            // edge.to is the current node, set the link's target
             link.target = i;
 
         }
 
     }
 
+    // return built link
     return link;
 
 };
 
+/**
+ * Turn response from graph servlet into visual graph for d3.
+ *
+ * @param resp      Response from servlet.
+ * @returns {{}}    Visual graph to render in d3.
+ */
 var respToGraph = function (resp) {
 
     var graph = {};
@@ -37,6 +57,7 @@ var respToGraph = function (resp) {
     graph.links = [];
     for (var i = 0; i < resp.edges.length; i++) {
 
+        // build links
         var link = edgeFromRespToLink(graph.nodes, resp.edges[i]);
         graph.links.push(link);
 
@@ -46,7 +67,7 @@ var respToGraph = function (resp) {
 
 };
 
-
+// begin drawing graph
 $(document).ready(function () {
 
     var container = d3.select('#visualizationContainer');
@@ -56,6 +77,7 @@ $(document).ready(function () {
         // clear out current container
         container.html('');
 
+        // svg settings
         var width = 1500,
             height = 800,
             nodeRadius = 6,
@@ -63,31 +85,37 @@ $(document).ready(function () {
             nodeTextPaddingLeft = 2,
             linkArrowHeight = 6;
 
+        // intialize force graph
         var force = d3.layout.force()
             .size([width, height])
             .charge(-400)
             .linkDistance(40)
             .on('tick', tick);
 
+        // set drag event
         var drag = force.drag()
             .on('dragstart', dragstart);
 
-        // append new svg
+        // append new svg to container
         var svg = container.append('svg')
             .attr('width', width)
             .attr('height', height);
 
+        // get the page path entered, hit servlet, get response, and render graph
         var $form = $(this);
         var pagePath = $form.find('#pagePath').val();
         d3.json('/bin/clientlibrarian/graph.json?page.path=' + pagePath, function(error, resp) {
 
+            // transform response into graph for d3
             var graph = respToGraph(resp);
 
+            // add items to force graph
             force
                 .nodes(graph.nodes)
                 .links(graph.links)
                 .start();
 
+            // set up svg
             svg.append('defs').selectAll("marker")
                 .data(["arrowhead"])
                 .enter().append("marker")
@@ -101,6 +129,7 @@ $(document).ready(function () {
                 .append("svg:path")
                 .attr("d", "M0,-5L10,0L0,5");
 
+            // set up links
             var link = svg.selectAll('.link')
                 .data(graph.links)
                 .enter().append('g')
@@ -114,6 +143,7 @@ $(document).ready(function () {
                 .attr('dy', '.35em')
                 .text(function (d) { return d.type; });
 
+            // set up nodes
             var node = svg.selectAll('.node')
                 .data(graph.nodes)
                 .enter().append('g')
@@ -122,7 +152,7 @@ $(document).ready(function () {
             node.append('circle')
                 .attr('class', function (d) { return d.type; })
                 .attr('r', nodeRadius)
-                .on('dbclick', dblclick)
+                .on('dblclick', dblclick)
                 .call(drag);
 
             node.append('text')
@@ -131,7 +161,10 @@ $(document).ready(function () {
 
         });
 
+        // tick function that will render each frame of graph
         function tick() {
+
+            // get all elements of graph
             var link = svg.selectAll('.link'),
                 node = svg.selectAll('.node');
 
