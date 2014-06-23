@@ -9,6 +9,11 @@
         <input id="pagePath" name="path" type="text" value="/content/home" />
         <button>Graph it!</button>
     </form>
+    <div id="visualizationControls">
+        <div>Zoom Ratio: <span id="zoomRatio">1</span></div>
+        <button id="zoomIn">+</button>
+        <button id="zoomOut">-</button>
+    </div>
     <div id="visualizationContainer"></div>
 
 </body>
