@@ -1,4 +1,10 @@
 
+/** TODOs:
+ *      - fix weird dragging behavior when zoomed in
+ *      - resize svg to fill entire background, overlay controls
+ *      - change zooming from decimal to integer, makes more sense, won't hav t
+ */
+
 (function () {
 
     /**
@@ -112,8 +118,8 @@
     };
 
     // svg settings
-    var maxWidth = 1500,            // actual pixel width of viewport and full graph
-        maxHeight = 800,            // actual pixel height of viewport and full graph
+    var maxWidth = 800,             // actual pixel width of viewport and full graph
+        maxHeight = 600,            // actual pixel height of viewport and full graph
         nodeRadius = 6,             // pixel radius of nodes
         nodeTextPaddingLeft = 2,    // pixel padding from node to text, placed left of the node
         linkArrowHeight = 6,        // height of arrow head
@@ -124,9 +130,22 @@
     // begin drawing graph
     $(document).ready(function () {
 
-        var container = d3.select('#visualizationContainer');
+        var container = d3.select('#visualizationContainer'),
+            $visualViewportCoordinates = $('#viewportOrigin'),
+            $visualViewportZoom = $('#zoomRatio'),
+            $buttonZoomIn = $('#zoomIn'),
+            $buttonZoomOut = $('#zoomOut');
 
         $('#formGraphProperties').submit(function (e) {
+
+            // create initial viewport variables
+            var zoomOptions = d3.scale.linear().domain([fullyZoomedInRatio, fullyZoomedOutRatio]).ticks(zoomTicks),
+                viewportOriginX = 0,
+                viewportOriginY = 0,
+                viewportPanMargin = 50,
+                currZoomOption = zoomOptions.length - 1,
+                viewportScale = calculateViewportScales(viewportOriginX, viewportOriginY,
+                                                        maxWidth, maxHeight, zoomOptions[currZoomOption]);
 
             // clear out current container
             container.html('');
@@ -134,24 +153,63 @@
             // append new svg to container
             var svg = container.append('svg')
                 .attr('width', maxWidth)
-                .attr('height', maxHeight);
+                .attr('height', maxHeight)
+                .on('mousemove', function () {
 
-            // create initial viewport variables
-            var zoomOptions = d3.scale.linear().domain([fullyZoomedInRatio, fullyZoomedOutRatio]).ticks(zoomTicks),
-                viewportOriginX = 0,
-                viewportOriginY = 0,
-                currZoomOption = zoomOptions.length - 1,
-                viewportScale = calculateViewportScales(viewportOriginX, viewportOriginY,
-                                                        maxWidth, maxHeight, zoomOptions[currZoomOption]);
+                    // get mouse position for panning, use in calculating new viewport origin pos
+                    var mousePos = d3.mouse(this),
+                        mX = mousePos[0],
+                        mY = mousePos[1],
+                        nX = 0,
+                        nY = 0;
+
+                    // right and left movement
+                    if (mX < viewportPanMargin) {
+
+                        // nearing left margin of viewport, move viewport left
+                        nX = viewportOriginX - viewportPanMargin;
+                        viewportOriginX = nX < 0 ? 0 : nX;
+
+                    } else if (mX > maxWidth - viewportPanMargin) {
+
+                        // nearing right margin of viewport, move viewport right
+                        nX = viewportOriginX + viewportPanMargin;
+                        viewportOriginX = nX > maxWidth ? maxWidth - viewportOriginX : nX;
+
+                    }
+
+                    // up and down movement
+                    if (mY < viewportPanMargin) {
+
+                        // nearing top margin of viewport, move viewport up
+                        nY = viewportOriginY - viewportPanMargin;
+                        viewportOriginY = nY < 0 ? 0 : nY;
+
+                    } if (mY > maxHeight - viewportPanMargin) {
+
+                        nY = viewportOriginY + viewportPanMargin;
+                        viewportOriginY = nY > maxHeight ? maxHeight - viewportOriginY : nY;
+
+                    }
+
+                    // refresh visual indicator of positioning
+                    $visualViewportCoordinates.html('(' + viewportOriginX + ',' + viewportOriginY + ')');
+
+                    // make new viewport scale functions
+                    var currZoom = zoomOptions[currZoomOption];
+                    viewportScale = calculateViewportScales(viewportOriginX, viewportOriginY,
+                        maxWidth, maxHeight, currZoom);
+
+                    // force a tick (rerender graph)
+                    tick();
+
+                });
 
             /**
              * Renders each animated frame of graph. Uses viewport scaling to render nodes based on their position
              *  relative to the viewport.
              */
             var tick = function () {
-
-                // rescale force graph so it runs properly relative to viewport
-                force.size([viewportScale.graphMaxX, viewportScale.graphMaxY]).resume();
 
                 // get all elements of graph
                 var link = svg.selectAll('.link'),
@@ -269,25 +327,28 @@
                 // set up controls
                 var $zoomRatio = $('#zoomRatio');
 
-                $('#zoomIn').off('click').on('click', function () {
+                $buttonZoomIn.off('click').on('click', function () {
 
                     // recalculate zoom options
                     currZoomOption = currZoomOption - 1 < 0 ? 0 : currZoomOption - 1;
                     var currZoom = zoomOptions[currZoomOption];
 
                     // set zoom ratio thing
-                    $zoomRatio.html(currZoom);
+                    $visualViewportZoom.html(currZoom);
 
                     // make new viewport scale functions
                     viewportScale = calculateViewportScales(viewportOriginX, viewportOriginY,
                         maxWidth, maxHeight, currZoom);
+
+                    // rescale force graph so it runs properly relative to viewport
+                    force.size([viewportScale.graphMaxX, viewportScale.graphMaxY]).resume();
 
                     // force a tick (rerender graph)
                     tick();
 
                 });
 
-                $('#zoomOut').off('click').on('click', function() {
+                $buttonZoomOut.off('click').on('click', function() {
 
                     // recalculate zoom options
                     currZoomOption = currZoomOption + 1 >= zoomOptions.length ?
@@ -295,11 +356,14 @@
                     var currZoom = zoomOptions[currZoomOption];
 
                     // set zoom ratio thing
-                    $zoomRatio.html(currZoom);
+                    $visualViewportZoom.html(currZoom);
 
                     // make new viewport scale functions
                     viewportScale = calculateViewportScales(viewportOriginX, viewportOriginY,
                         maxWidth, maxHeight, currZoom);
+
+                    // rescale force graph so it runs properly relative to viewport
+                    force.size([viewportScale.graphMaxX, viewportScale.graphMaxY]).resume();
 
                     // force a tick (rerender graph)
                     tick();

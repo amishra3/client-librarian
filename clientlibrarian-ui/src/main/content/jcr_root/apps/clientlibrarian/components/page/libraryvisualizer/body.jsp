@@ -13,6 +13,7 @@
         <div>Zoom Ratio: <span id="zoomRatio">1</span></div>
         <button id="zoomIn">+</button>
         <button id="zoomOut">-</button>
+        <div>Viewport Origin on 1:1 Plane: <span id="viewportOrigin">(0,0)</span></div>
     </div>
     <div id="visualizationContainer"></div>
 
