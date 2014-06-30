@@ -2,7 +2,8 @@
 /** TODOs:
  *      - fix weird dragging behavior when zoomed in
  *      - resize svg to fill entire background, overlay controls
- *      - change zooming from decimal to integer, makes more sense, won't hav t
+ *      - change zooming from decimal to integer, makes more sense, won't have to use ratios
+ *      - panning to bottom and right most still slightly off
  */
 
 (function () {
@@ -156,39 +157,76 @@
                 .attr('height', maxHeight)
                 .on('mousemove', function () {
 
-                    // get mouse position for panning, use in calculating new viewport origin pos
-                    var mousePos = d3.mouse(this),
-                        mX = mousePos[0],
-                        mY = mousePos[1],
-                        nX = 0,
-                        nY = 0;
+                    if (zoomOptions[currZoomOption] === fullyZoomedOutRatio) {
 
-                    // right and left movement
-                    if (mX < viewportPanMargin) {
+                        // zoomed all the way out, viewport cannot move
+                        viewportOriginX = 0;
+                        viewportOriginY = 0;
 
-                        // nearing left margin of viewport, move viewport left
-                        nX = viewportOriginX - viewportPanMargin;
-                        viewportOriginX = nX < 0 ? 0 : nX;
+                    } else {
 
-                    } else if (mX > maxWidth - viewportPanMargin) {
+                        // get mouse position for panning, use in calculating new viewport origin pos
+                        var mousePos = d3.mouse(this),
+                            mX = mousePos[0],       // mouse x coord, rel to maxWidth
+                            mY = mousePos[1];       // mouse y coord, rel to maxHeight
 
-                        // nearing right margin of viewport, move viewport right
-                        nX = viewportOriginX + viewportPanMargin;
-                        viewportOriginX = nX > maxWidth ? maxWidth - viewportOriginX : nX;
+                        // right and left movement
+                        if (mX < viewportPanMargin) {
 
-                    }
+                            // nearing left margin of viewport, move viewport left
+                            var nVOX = viewportOriginX - viewportPanMargin;
+                            if (nVOX >= 0) {
 
-                    // up and down movement
-                    if (mY < viewportPanMargin) {
+                                // new viewport origin x is greater than zero, set new origin x to the left
+                                viewportOriginX -= viewportPanMargin;
 
-                        // nearing top margin of viewport, move viewport up
-                        nY = viewportOriginY - viewportPanMargin;
-                        viewportOriginY = nY < 0 ? 0 : nY;
+                            }
 
-                    } if (mY > maxHeight - viewportPanMargin) {
+                        } else if (mX > maxWidth - viewportPanMargin) {
 
-                        nY = viewportOriginY + viewportPanMargin;
-                        viewportOriginY = nY > maxHeight ? maxHeight - viewportOriginY : nY;
+                            // nearing right margin of viewport, move viewport right
+                            if (viewportOriginX + maxWidth + viewportPanMargin <= viewportScale.graphMaxX) {
+
+                                // new viewport max x coord lt than max width of graph, set new origin x to the right
+                                viewportOriginX += viewportPanMargin;
+
+                            } else {
+
+                                // viewport max x is gt than max width of graph, set new origin x so rightmost
+                                viewportOriginX = viewportScale.graphMaxX - maxWidth;
+
+                            }
+
+                        }
+
+                        // up and down movement
+                        if (mY < viewportPanMargin) {
+
+                            // nearing top margin of viewport, move viewport up
+                            var nVOY = viewportOriginY - viewportPanMargin;
+                            if (nVOY >= 0) {
+
+                                // new viewport origin y is greater than zero, set new origin y up
+                                viewportOriginY -= viewportPanMargin;
+
+                            }
+
+                        } else if (mY > maxHeight - viewportPanMargin) {
+
+                            // nearing bottom margin of viewport, move viewport down
+                            if (viewportOriginY + maxHeight + viewportPanMargin <= viewportScale.graphMaxY) {
+
+                                // new viewport max y coord lt max height of graph, set new origin y down
+                                viewportOriginY += viewportPanMargin;
+
+                            } else {
+
+                                // viewport max y is gt than max height of graph, set new origin y so bottommost
+                                viewportOriginY = viewportScale.graphMaxY - maxHeight;
+
+                            }
+
+                        }
 
                     }
 
