@@ -57,30 +57,6 @@
         </repository>
     </distributionManagement>
 
-    <!--
-    <repositories>
-        <repository>
-            <id>citytech-public</id>
-            <url>http://nexus.citytech.ctmsp.com/content/groups/public</url>
-        </repository>
-        <repository>
-            <id>citytech-private</id>
-            <url>http://nexus.citytech.ctmsp.com/content/groups/CITYTECH-Private/</url>
-        </repository>
-    </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>citytech-public</id>
-            <url>http://nexus.citytech.ctmsp.com/content/groups/public</url>
-        </pluginRepository>
-        <pluginRepository>
-            <id>citytech-private</id>
-            <url>http://nexus.citytech.ctmsp.com/content/groups/CITYTECH-Private/</url>
-        </pluginRepository>
-    </pluginRepositories>
-    -->
-
 	<properties>
         <api.name>clientlibrarian-api</api.name>
 		<core.name>clientlibrarian-core</core.name>
@@ -92,22 +68,6 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.junit.usefile>false</maven.junit.usefile>
 	</properties>
-
-    <!--
-	<profiles>
-		<profile>
-			<id>default</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<properties>
-                <crx.skip>true</crx.skip>
-                <osgi.bundle.status.skip>true</osgi.bundle.status.skip>
-                <cq.username>admin</cq.username>
-			</properties>
-		</profile>
-	</profiles>
-    -->
 
 	<build>
 		<plugins>
@@ -159,23 +119,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>com.atlassian.maven.plugins</groupId>
-                <artifactId>maven-jgitflow-plugin</artifactId>
-                <version>1.0-alpha20</version>
-                <configuration>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <enableFeatureVersions>false</enableFeatureVersions>
-                    <noFeatureBuild>true</noFeatureBuild>
-                    <noReleaseBuild>true</noReleaseBuild>
-                    <noDeploy>true</noDeploy>
-                    <flowInitContext>
-                        <featureBranchPrefix>feature/</featureBranchPrefix>
-                        <releaseBranchPrefix>release/</releaseBranchPrefix>
-                        <hotfixBranchPrefix>hotfix/</hotfixBranchPrefix>
-                    </flowInitContext>
-                </configuration>
             </plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
