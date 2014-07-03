@@ -16,9 +16,11 @@
 package com.citytechinc.cq.clientlibs.core.tags;
 
 import com.citytechinc.cq.clientlibs.core.servlets.ComponentClientLibraryServlet;
+import com.day.cq.commons.jcr.JcrConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,15 +108,35 @@ public class PageLibraryTag extends TagSupport {
 
     }
 
-    /*
-     * TODO: Clean this up
+    /**
+     * Get the path to the resource that has client libraries.
+     *
+     * @param request   Request for the resource to get client libraries.
+     *
+     * @return  path to the current resource that needs client libraries.
      */
     private String getIncludeFilePath(SlingHttpServletRequest request) {
-        Resource resource = request.getResource();
-        if (resource.getName().equals("jcr:content")) {
-            return request.getResourceResolver().map(resource.getParent().getPath());
+
+        // path to return
+        final String path;
+
+        // figure out what path should be
+        final ResourceResolver resourceResolver = request.getResourceResolver();
+        final Resource resource = request.getResource();
+        if (resource.getName().equals(JcrConstants.JCR_CONTENT)) {
+
+            // on a jcr content node, return the parent node
+            path = resourceResolver.map(request, resource.getParent().getPath());
+
+        } else {
+
+            // on a non-jcr content node, just return the resource's path
+            path = resourceResolver.map(request, resource.getPath());
+
         }
-        return request.getResourceResolver().map(resource.getPath());
+
+        return path;
+
     }
 
     private Boolean buildJs() {
