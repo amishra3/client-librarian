@@ -131,6 +131,11 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         return this.reentrantReadWriteLock.writeLock().tryLock() || this.reentrantReadWriteLock.writeLock().tryLock(3, TimeUnit.SECONDS);
     }
 
+    private void releaseWriteLockIfHeld(final boolean obtainedLock) {
+        if(obtainedLock) this.reentrantReadWriteLock.writeLock().unlock();
+    }
+
+
     protected void bindDependencyProvider(ResourceDependencyProvider resourceDependencyProvider) {
         LOG.debug("Binding ResourceDependencyProvider " + resourceDependencyProvider)
 
@@ -144,7 +149,7 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
                 }
             }
         }finally {
-            if(obtainedLock) this.reentrantReadWriteLock.readLock().unlock();
+            this.releaseWriteLockIfHeld(obtainedLock)
         }
     }
 
@@ -161,7 +166,7 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
                 }
             }
         }finally {
-            if(obtainedLock) this.reentrantReadWriteLock.readLock().unlock();
+            this.releaseWriteLockIfHeld(obtainedLock)
         }
     }
 
