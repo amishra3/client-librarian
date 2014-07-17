@@ -9,21 +9,22 @@ import java.util.concurrent.TimeUnit;
 import static java.lang.String.format;
 
 public abstract class BaseConcurrencyTest {
-    protected static final int two_seconds = 2;
-    protected static final int ten_seconds = 10;
+    protected static final int two_seconds = 2000;
+    protected static final int ten_seconds = 10000;
 
-    protected final SlowDown letsSlowDown(final int seconds) {
-        return new SlowDown(seconds);
+    protected final SlowDown letsSlowDown(final int milliseconds) {
+        return new SlowDown(milliseconds);
     }
-    protected final class SlowDown {
-        protected final int seconds;
 
-        SlowDown(final int seconds) {
-            this.seconds = seconds;
+    protected final class SlowDown {
+        protected final int milliseconds;
+
+        SlowDown(final int milliseconds) {
+            this.milliseconds = milliseconds;
         }
 
         public void now() {
-            try { Thread.sleep(this.seconds * 1000); }catch(final Exception e) {};
+            try { Thread.sleep(this.milliseconds); }catch(final Exception e) {};
         }
     }
 
@@ -51,7 +52,7 @@ public abstract class BaseConcurrencyTest {
 
         @Override
         public synchronized void start() {
-            stopwatch = Stopwatch.createStarted();
+            this.stopwatch = Stopwatch.createStarted();
             super.start();
         }
 
@@ -79,14 +80,14 @@ public abstract class BaseConcurrencyTest {
             };
         }
 
-        protected void sleep(final int seconds) {
-            try { Thread.sleep(seconds * 1000); }catch(final Exception e) {};
+        protected void sleep(final int milliseconds) {
+            try { Thread.sleep(milliseconds); }catch(final Exception e) {};
         }
 
         public Split execute() {
             for(final StopwatchThread stopwatchThread : threads) {
                 stopwatchThread.start();
-                sleep(1);
+                this.sleep(1000);
             }
 
             this.finish();
@@ -99,7 +100,7 @@ public abstract class BaseConcurrencyTest {
 
         protected void finish() {
             while(this.isStillRunning()) {
-                this.sleep(10);
+                this.sleep(100);
 
                 this.printReport();
 
@@ -109,13 +110,24 @@ public abstract class BaseConcurrencyTest {
 
         protected void printReport() {
             final StringBuffer report = new StringBuffer();
-            String template = "%1$s[%2$s, %3$s sec] ";
+            final String template = "%1$s[%2$s, %3$s ms] ";
+
             for(StopwatchThread stopwatchThread : this.threads) {
+                final String threadState;
+
+                if(stopwatchThread.isAlive()) {
+                    threadState = "active";
+                }else {
+                    if(stopwatchThread.getStopwatch().isRunning()) stopwatchThread.getStopwatch().stop();
+
+                    threadState = "finished";
+                }
+
                 final String message =
                     format(template,
                         stopwatchThread.getMarker(),
-                        stopwatchThread.isAlive() ? "active" : "finished",
-                        stopwatchThread.getStopwatch().elapsed(TimeUnit.SECONDS)
+                        threadState,
+                        stopwatchThread.getStopwatch().elapsed(TimeUnit.MILLISECONDS)
                     );
                 report.append(message);
             }
