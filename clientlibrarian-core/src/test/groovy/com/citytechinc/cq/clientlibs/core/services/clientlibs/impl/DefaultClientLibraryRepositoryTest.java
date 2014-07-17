@@ -55,19 +55,19 @@ public class DefaultClientLibraryRepositoryTest extends BaseConcurrencyTest {
         slowResourceDependencyProviderList = new ArrayList<ResourceDependencyProvider>() {
             @Override
             public boolean contains(Object o) {
-                letsSlowDown(two_seconds).on("contains");
+//                letsSlowDown(two_seconds).on("contains");
                 return mockResourceDependencyProviderListInternal.contains(o);
             }
 
             @Override
             public boolean add(ResourceDependencyProvider e) {
-                letsSlowDown(ten_seconds).on("add");
+//                letsSlowDown(ten_seconds).on("add");
                 return mockResourceDependencyProviderListInternal.add(e);
             };
 
             @Override
             public boolean remove(Object o) {
-                letsSlowDown(ten_seconds).on("remove");
+//                letsSlowDown(ten_seconds).on("remove");
                 return mockResourceDependencyProviderListInternal.remove(o);
             }
         };
