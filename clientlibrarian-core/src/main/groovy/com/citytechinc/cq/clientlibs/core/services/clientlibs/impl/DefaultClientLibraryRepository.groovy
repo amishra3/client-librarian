@@ -57,7 +57,7 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultClientLibraryRepository.class)
 
     @Reference( cardinality = ReferenceCardinality.MANDATORY_MULTIPLE, policy = ReferencePolicy.DYNAMIC, bind = "bindDependencyProvider", unbind = "unbindDependencyProvider", referenceInterface = ResourceDependencyProvider )
-    private final List<ResourceDependencyProvider> resourceDependencyProviderList = []
+    protected final List<ResourceDependencyProvider> resourceDependencyProviderList;
 
     @Reference( cardinality = ReferenceCardinality.OPTIONAL_MULTIPLE, policy = ReferencePolicy.DYNAMIC, bind = "bindVariableProvider", unbind = "unbindVariableProvider", referenceInterface = VariableProvider )
     private final List<VariableProvider> variableProviderList = []
@@ -78,7 +78,21 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     private static final String STRICT_JAVASCRIPT = "strictJavascript"
     private Boolean strictJavascript
 
-    private ClientLibraryRepositoryStateManager stateManager
+    protected ClientLibraryRepositoryStateManager stateManager
+
+    protected DefaultClientLibraryRepository(final List<ResourceDependencyProvider> resourceDependencyProviderList,
+                                             final ClientLibraryRepositoryStateManager stateManager) {
+        this.resourceDependencyProviderList = resourceDependencyProviderList;
+        this.stateManager = stateManager
+    }
+
+    DefaultClientLibraryRepository() {
+        this.resourceDependencyProviderList = [];
+    }
+
+
+
+
 
     @Activate
     protected void activate( Map<String, Object> properties ) throws RepositoryException, LoginException {
@@ -113,11 +127,8 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         LOG.debug("Binding ResourceDependencyProvider " + resourceDependencyProvider)
 
         synchronized (resourceDependencyProviderList) {
-            if (resourceDependencyProviderList.contains(resourceDependencyProvider)) {
+            if (!resourceDependencyProviderList.add(resourceDependencyProvider)) {
                 LOG.error(resourceDependencyProvider + " already exists in the services Resource Dependency Provider List")
-            }
-            else {
-                resourceDependencyProviderList.add(resourceDependencyProvider)
             }
         }
     }
@@ -127,10 +138,7 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         LOG.debug("Unbinding ResourceDependencyProvider " + resourceDependencyProvider)
 
         synchronized (resourceDependencyProviderList) {
-            if (resourceDependencyProviderList.contains(resourceDependencyProvider)) {
-                resourceDependencyProviderList.remove(resourceDependencyProvider)
-            }
-            else {
+            if (!resourceDependencyProviderList.remove(resourceDependencyProvider)) {
                 LOG.error("An attempt to unbind " + resourceDependencyProvider + " was made however this dependency provider is not in the current list of known providers")
             }
         }
@@ -253,7 +261,7 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
     }
 
-    private DependencyGraph<ClientLibrary> getDependencyGraph(Resource root) {
+    protected DependencyGraph<ClientLibrary> getDependencyGraph(Resource root) {
 
         List<ResourceDependencyProvider> resourceDependencyProviderListCopy = null
 
@@ -265,7 +273,7 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
     }
 
-    private List<ClientLibrary> getOrderedDependencies( Resource root ) throws InvalidQueryException, RepositoryException, InvalidClientLibraryCategoryException {
+    protected List<ClientLibrary> getOrderedDependencies( Resource root ) throws InvalidQueryException, RepositoryException, InvalidClientLibraryCategoryException {
 
         List<ResourceDependencyProvider> resourceDependencyProviderListCopy = null
 
