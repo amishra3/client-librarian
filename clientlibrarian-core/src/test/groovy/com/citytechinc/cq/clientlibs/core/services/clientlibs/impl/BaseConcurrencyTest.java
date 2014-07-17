@@ -17,13 +17,19 @@ public abstract class BaseConcurrencyTest {
     }
 
     protected final class SlowDown {
+        protected final String template = "Slowing %1$s %2$s ms";
+
         protected final int milliseconds;
 
         SlowDown(final int milliseconds) {
             this.milliseconds = milliseconds;
         }
 
-        public void now() {
+        public void on(final String methodName) {
+
+
+            System.out.println(String.format(template, methodName, this.milliseconds));
+
             try { Thread.sleep(this.milliseconds); }catch(final Exception e) {};
         }
     }

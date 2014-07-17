@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultClientLibraryRepositoryTest extends BaseConcurrencyTest {
@@ -54,19 +55,19 @@ public class DefaultClientLibraryRepositoryTest extends BaseConcurrencyTest {
         slowResourceDependencyProviderList = new ArrayList<ResourceDependencyProvider>() {
             @Override
             public boolean contains(Object o) {
-                letsSlowDown(two_seconds).now();
+                letsSlowDown(two_seconds).on("contains");
                 return mockResourceDependencyProviderListInternal.contains(o);
             }
 
             @Override
             public boolean add(ResourceDependencyProvider e) {
-                letsSlowDown(ten_seconds).now();
+                letsSlowDown(ten_seconds).on("add");
                 return mockResourceDependencyProviderListInternal.add(e);
             };
 
             @Override
             public boolean remove(Object o) {
-                letsSlowDown(ten_seconds).now();
+                letsSlowDown(ten_seconds).on("remove");
                 return mockResourceDependencyProviderListInternal.remove(o);
             }
         };
@@ -77,18 +78,28 @@ public class DefaultClientLibraryRepositoryTest extends BaseConcurrencyTest {
         final DefaultClientLibraryRepository defaultClientLibraryRepository =
             new DefaultClientLibraryRepository(slowResourceDependencyProviderList, clientLibraryRepositoryStateManager);
 
-        final ResourceDependencyProvider resourceDependencyProvider = mock(ResourceDependencyProvider.class);
+        final ResourceDependencyProvider bindResourceDependencyProvider = mock(ResourceDependencyProvider.class);
+        final ResourceDependencyProvider unbindResourceDependencyProvider = mock(ResourceDependencyProvider.class);
+
         final Resource resource = mock(Resource.class);
+
+        // If we are binding, then report 'false' to cause an 'add'
+        when(mockResourceDependencyProviderListInternal.contains(bindResourceDependencyProvider))
+            .thenReturn(false);
+
+        // If we are unbinding, then report 'true' to cause 'remove'
+        when(mockResourceDependencyProviderListInternal.contains(unbindResourceDependencyProvider))
+            .thenReturn(true);
 
         super.split(new NamedRunnable("bindDependencyProvider") {
             @Override
             public void run() {
-                defaultClientLibraryRepository.bindDependencyProvider(resourceDependencyProvider);
+                defaultClientLibraryRepository.bindDependencyProvider(bindResourceDependencyProvider);
             }
         }, new NamedRunnable("unbindDependencyProvider") {
             @Override
             public void run() {
-                defaultClientLibraryRepository.unbindDependencyProvider(resourceDependencyProvider);
+                defaultClientLibraryRepository.unbindDependencyProvider(unbindResourceDependencyProvider);
             }
         }, new NamedRunnable("getDependencyGraph") {
             @Override
@@ -100,7 +111,8 @@ public class DefaultClientLibraryRepositoryTest extends BaseConcurrencyTest {
             public void run() {
                 try {
                     defaultClientLibraryRepository.getOrderedDependencies(resource);
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
             }
         })
         .execute();
