@@ -44,6 +44,9 @@ import javax.jcr.query.InvalidQueryException
 
 import org.apache.sling.commons.osgi.PropertiesUtil
 
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantReadWriteLock
+
 /**
  *
  */
@@ -122,25 +125,43 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
     }
 
-    protected void bindDependencyProvider(ResourceDependencyProvider resourceDependencyProvider) {
+    protected final ReentrantReadWriteLock reentrantReadWriteLock = new ReentrantReadWriteLock(false);
 
+    private final boolean isWriteLocked() {
+        return this.reentrantReadWriteLock.writeLock().tryLock() || this.reentrantReadWriteLock.writeLock().tryLock(3, TimeUnit.SECONDS);
+    }
+
+    protected void bindDependencyProvider(ResourceDependencyProvider resourceDependencyProvider) {
         LOG.debug("Binding ResourceDependencyProvider " + resourceDependencyProvider)
 
-        synchronized (resourceDependencyProviderList) {
-            if (!resourceDependencyProviderList.add(resourceDependencyProvider)) {
-                LOG.error(resourceDependencyProvider + " already exists in the services Resource Dependency Provider List")
+        boolean obtainedLock = false
+
+        try {
+            obtainedLock = this.isWriteLocked()
+            if(obtainedLock) {
+                if (!resourceDependencyProviderList.add(resourceDependencyProvider)) {
+                    LOG.error(resourceDependencyProvider + " already exists in the services Resource Dependency Provider List")
+                }
             }
+        }finally {
+            if(obtainedLock) this.reentrantReadWriteLock.readLock().unlock();
         }
     }
 
     protected void unbindDependencyProvider(ResourceDependencyProvider resourceDependencyProvider) {
-
         LOG.debug("Unbinding ResourceDependencyProvider " + resourceDependencyProvider)
 
-        synchronized (resourceDependencyProviderList) {
-            if (!resourceDependencyProviderList.remove(resourceDependencyProvider)) {
-                LOG.error("An attempt to unbind " + resourceDependencyProvider + " was made however this dependency provider is not in the current list of known providers")
+        boolean obtainedLock = false
+
+        try {
+            obtainedLock = this.isWriteLocked()
+            if(obtainedLock) {
+                if (!resourceDependencyProviderList.remove(resourceDependencyProvider)) {
+                    LOG.error("An attempt to unbind " + resourceDependencyProvider + " was made however this dependency provider is not in the current list of known providers")
+                }
             }
+        }finally {
+            if(obtainedLock) this.reentrantReadWriteLock.readLock().unlock();
         }
     }
 
