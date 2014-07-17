@@ -127,11 +127,8 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         LOG.debug("Binding ResourceDependencyProvider " + resourceDependencyProvider)
 
         synchronized (resourceDependencyProviderList) {
-            if (resourceDependencyProviderList.contains(resourceDependencyProvider)) {
+            if (!resourceDependencyProviderList.add(resourceDependencyProvider)) {
                 LOG.error(resourceDependencyProvider + " already exists in the services Resource Dependency Provider List")
-            }
-            else {
-                resourceDependencyProviderList.add(resourceDependencyProvider)
             }
         }
     }
@@ -141,10 +138,7 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         LOG.debug("Unbinding ResourceDependencyProvider " + resourceDependencyProvider)
 
         synchronized (resourceDependencyProviderList) {
-            if (resourceDependencyProviderList.contains(resourceDependencyProvider)) {
-                resourceDependencyProviderList.remove(resourceDependencyProvider)
-            }
-            else {
+            if (!resourceDependencyProviderList.remove(resourceDependencyProvider)) {
                 LOG.error("An attempt to unbind " + resourceDependencyProvider + " was made however this dependency provider is not in the current list of known providers")
             }
         }
