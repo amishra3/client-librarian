@@ -135,6 +135,13 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         if(obtainedLock) this.reentrantReadWriteLock.writeLock().unlock();
     }
 
+    private final boolean isReadLocked() {
+        return this.reentrantReadWriteLock.readLock().tryLock() || this.reentrantReadWriteLock.readLock().tryLock(3, TimeUnit.SECONDS);
+    }
+
+    private void releaseReadLockIfHeld(final boolean obtainedLock) {
+        if(obtainedLock) this.reentrantReadWriteLock.readLock().unlock();
+    }
 
     protected void bindDependencyProvider(ResourceDependencyProvider resourceDependencyProvider) {
         LOG.debug("Binding ResourceDependencyProvider " + resourceDependencyProvider)
@@ -288,27 +295,41 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     }
 
     protected DependencyGraph<ClientLibrary> getDependencyGraph(Resource root) {
-
         List<ResourceDependencyProvider> resourceDependencyProviderListCopy = null
 
-        synchronized (resourceDependencyProviderList) {
-            resourceDependencyProviderListCopy = ImmutableList.copyOf(resourceDependencyProviderList)
+        boolean obtainedLock = false
+
+        try {
+            obtainedLock = this.readLocked()
+
+            if(obtainedLock) {
+                resourceDependencyProviderListCopy = ImmutableList.copyOf(resourceDependencyProviderList)
+            }
+        }finally {
+            this.releaseReadLockIfHeld(obtainedLock)
         }
 
         return stateManager.requestDependencyGraph(root, resourceDependencyProviderListCopy)
 
     }
 
-    protected List<ClientLibrary> getOrderedDependencies( Resource root ) throws InvalidQueryException, RepositoryException, InvalidClientLibraryCategoryException {
 
+    protected List<ClientLibrary> getOrderedDependencies( Resource root ) throws InvalidQueryException, RepositoryException, InvalidClientLibraryCategoryException {
         List<ResourceDependencyProvider> resourceDependencyProviderListCopy = null
 
-        synchronized (resourceDependencyProviderList) {
-            resourceDependencyProviderListCopy = ImmutableList.copyOf(resourceDependencyProviderList)
+        boolean obtainedLock = false
+
+        try {
+            obtainedLock = this.readLocked()
+
+            if(obtainedLock) {
+                resourceDependencyProviderListCopy = ImmutableList.copyOf(resourceDependencyProviderList)
+            }
+        }finally {
+            this.releaseReadLockIfHeld(obtainedLock)
         }
 
         return stateManager.requestOrderedDependencies( root, resourceDependencyProviderListCopy )
-
     }
 
     private String compileJSClientLibrary( Resource root, List<ClientLibrary> dependencies ) {
