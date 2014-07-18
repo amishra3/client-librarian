@@ -16,12 +16,13 @@
 package com.citytechinc.cq.clientlibs.api.services.clientlibs;
 
 import com.citytechinc.cq.clientlibs.api.domain.library.ClientLibrary;
+import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.ClientLibraryCompilationException;
 import org.apache.sling.api.resource.Resource;
 
 import java.util.Set;
 
 public interface ResourceDependencyProvider {
 
-    public Set<ClientLibrary> getDependenciesForResource(Resource r);
+    public Set<ClientLibrary> getDependenciesForResource(Resource r) throws ClientLibraryCompilationException;
 
 }

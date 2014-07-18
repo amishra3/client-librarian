@@ -16,15 +16,19 @@
 package com.citytechinc.cq.clientlibs.core.services.clientlibs.impl
 
 import com.citytechinc.cq.clientlibs.api.domain.component.DependentComponent
+import com.citytechinc.cq.clientlibs.api.domain.component.EmbeddedComponent
 import com.citytechinc.cq.clientlibs.api.domain.library.ClientLibrary
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ClientLibraryManager
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ResourceDependencyProvider
+import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.ClientLibraryCompilationException
 import com.citytechinc.cq.clientlibs.api.services.components.DependentComponentManager
 import com.citytechinc.cq.clientlibs.api.util.ComponentUtils
+import com.google.common.collect.Queues
 import com.google.common.collect.Sets
 import org.apache.felix.scr.annotations.Component
 import org.apache.felix.scr.annotations.Service
 import org.apache.sling.api.resource.Resource
+import org.apache.sling.api.resource.SyntheticResource
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -43,37 +47,59 @@ class DefaultResourceDependencyProvider implements ResourceDependencyProvider {
     private DependentComponentManager dependentComponentManager
 
     @Override
-    Set<ClientLibrary> getDependenciesForResource(Resource r) {
+    Set<ClientLibrary> getDependenciesForResource(Resource r) throws ClientLibraryCompilationException {
 
         Map<String, Set<ClientLibrary>> clientLibrariesByCategoryMap = clientLibraryManager.librariesByCategory
         Map<String, DependentComponent> dependentComponentsByComponentPathMap = dependentComponentManager.componentsByPath
-
-        Set<String> componentTypes = ComponentUtils.getNestedComponentTypes(r)
-
-        Set<ClientLibrary> dependencies = Sets.newHashSet()
-
         String[] searchPaths = r.resourceResolver.searchPath
 
-        componentTypes.each { String currentComponentType ->
+        Set<Resource> flattenedResourceTree = ComponentUtils.flattenResourceTree(r, true)
+        Set<ClientLibrary> dependencies = Sets.newHashSet()
+        Set<String> visitedResourceTypes = Sets.newHashSet()
 
-            String fullComponentPath = getFullPathToComponentForResourceType(currentComponentType, searchPaths, dependentComponentsByComponentPathMap.keySet())
+        Map<String, Resource> flattenedResourcesByPath = [:]
+        flattenedResourceTree.each { flattenedResourcesByPath.put( it.path, it ) }
 
-            if (fullComponentPath == null) {
-                LOG.debug("No full component path was found for component type " + currentComponentType)
-                return
-            }
+        Queue resourceProcessingQueue = Queues.newArrayDeque(flattenedResourceTree)
 
-            DependentComponent currentDependentComponent = dependentComponentsByComponentPathMap.get(fullComponentPath)
+        while (!resourceProcessingQueue.isEmpty()) {
+            Resource currentResourceUnderProcessing = resourceProcessingQueue.remove()
 
-            currentDependentComponent.dependencies.each { String currentDependency ->
-                if (!clientLibrariesByCategoryMap.containsKey(currentDependency)) {
-                    LOG.error("Component " + currentComponentType + " indicates it is dependent on client library " + currentDependency + " however no Client Libraries answer to that name")
-                    return
+            if (visitedResourceTypes.add(currentResourceUnderProcessing.resourceType)) {
+                String fullComponentPath = getFullPathToComponentForResourceType(currentResourceUnderProcessing.resourceType, searchPaths, dependentComponentsByComponentPathMap.keySet())
+
+                if (fullComponentPath == null) {
+                    LOG.debug("No full component path was found for component type " + currentResourceUnderProcessing.resourceType)
                 }
+                else {
+                    DependentComponent currentDependentComponent = dependentComponentsByComponentPathMap.get(fullComponentPath)
 
-                dependencies.addAll(clientLibrariesByCategoryMap.get(currentDependency))
+                    currentDependentComponent.dependencies.each { String currentDependency ->
+                        if (!clientLibrariesByCategoryMap.containsKey(currentDependency)) {
+                            throw new ClientLibraryCompilationException("Component " + currentResourceUnderProcessing.resourceType + " indicates it is dependent on client library " + currentDependency + " however no Client Libraries answer to that name")
+                        }
+
+                        dependencies.addAll(clientLibrariesByCategoryMap.get(currentDependency))
+                    }
+
+                    /*
+                     * For every component indicated as an embedded component - if we are not already going to deal with the component in
+                     * the context of the calculated content tree then add the resource to the queue for processing
+                     */
+                    currentDependentComponent.embeddedComponents.each { EmbeddedComponent currentEmbeddedComponent ->
+                        if (!flattenedResourcesByPath.containsKey(currentResourceUnderProcessing.path + "/" + currentEmbeddedComponent.relativePath)) {
+                            Resource embeddedResource = currentResourceUnderProcessing.getChild(currentEmbeddedComponent.relativePath)
+
+                            if (embeddedResource == null) {
+                                embeddedResource = new SyntheticResource(currentResourceUnderProcessing.resourceResolver, currentResourceUnderProcessing.path + "/" + currentEmbeddedComponent.relativePath, currentEmbeddedComponent.resourceType)
+                            }
+
+                            resourceProcessingQueue.add(embeddedResource)
+                            flattenedResourcesByPath.put(embeddedResource.path, embeddedResource)
+                        }
+                    }
+                }
             }
-
         }
 
         return dependencies

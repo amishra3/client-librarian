@@ -15,19 +15,13 @@
  */
 package com.citytechinc.cq.clientlibs.api.util;
 
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
-import javax.jcr.Property;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
-import javax.jcr.query.QueryManager;
-import javax.jcr.query.QueryResult;
-import javax.jcr.query.Row;
-import javax.jcr.query.RowIterator;
 
+import com.google.common.collect.Sets;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,35 +32,37 @@ public class ComponentUtils {
 
     private static final String TYPED_COMPONENT_QUERY = "SELECT * FROM \"nt:base\" WHERE ISDESCENDANTNODE( \'{path}\' ) AND [sling:resourceType] IS NOT NULL";
 
-    public static final Set<String> getNestedComponentTypes(Resource root) throws InvalidQueryException, RepositoryException {
+    public static Set<String> getNestedComponentTypes(Resource root) {
         return getNestedComponentTypes(root, true);
     }
 
-    public static final Set<String> getNestedComponentTypes(Resource root, boolean inclusive) throws InvalidQueryException, RepositoryException {
+    public static Set<Resource> flattenResourceTree(Resource root, boolean inclusive) {
 
-        QueryManager queryManager = root.getResourceResolver().adaptTo(Session.class).getWorkspace().getQueryManager();
+        Iterator<Resource> typedResourceIterator = root.getResourceResolver().findResources(TYPED_COMPONENT_QUERY, Query.JCR_SQL2);
 
-        LOG.debug("Requesting nested components for " + root);
+        Set<Resource> flattenedResourceTree = Sets.newHashSet(typedResourceIterator);
 
-        Query componentQuery = queryManager.createQuery(TYPED_COMPONENT_QUERY.replace("{path}", root.getPath()), Query.JCR_SQL2);
+        if (inclusive) {
+            flattenedResourceTree.add(root);
+        }
 
-        QueryResult componentQueryResult = componentQuery.execute();
+        return flattenedResourceTree;
 
-        Set<String> retSet = new HashSet<String>();
-        retSet.add(root.getResourceType());
+    }
 
-        RowIterator resultIterator = componentQueryResult.getRows();
+    public static Set<String> getNestedComponentTypes(Resource root, boolean inclusive) {
 
-        while (resultIterator.hasNext()) {
-            Row curResultRow = resultIterator.nextRow();
+        Set<Resource> flattenedResourceTree = flattenResourceTree(root, inclusive);
 
-            Property resourceType = curResultRow.getNode().getProperty("sling:resourceType");
+        Set<String> resourceTypeSet = Sets.newHashSet();
 
-            if (resourceType != null) {
-                retSet.add(resourceType.getString());
+        for (Resource currentResource : flattenedResourceTree) {
+            if (currentResource.getResourceType() != null && StringUtils.isNotBlank(currentResource.getResourceType())) {
+                resourceTypeSet.add(currentResource.getResourceType());
             }
         }
 
-        return retSet;
+        return resourceTypeSet;
+
     }
 }

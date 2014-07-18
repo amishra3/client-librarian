@@ -15,23 +15,10 @@
  */
 package com.citytechinc.cq.clientlibs.api.domain.component;
 
-import com.day.cq.wcm.api.components.Component;
-import org.apache.sling.api.resource.Resource;
+public interface EmbeddedComponent {
 
-import java.util.Set;
-
-public interface DependentComponent {
-
-    public Resource getResource();
-
-    public Set<String> getDependencies();
-
-    public Component getComponent();
+    public String getRelativePath();
 
     public String getResourceType();
-
-    public String getResourceSuperType();
-
-    public Set<EmbeddedComponent> getEmbeddedComponents();
 
 }

@@ -13,25 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.citytechinc.cq.clientlibs.api.domain.component;
+package com.citytechinc.cq.clientlibs.core.domain.component;
 
-import com.day.cq.wcm.api.components.Component;
-import org.apache.sling.api.resource.Resource;
+import com.citytechinc.cq.clientlibs.api.domain.component.EmbeddedComponent;
+import com.citytechinc.cq.clientlibs.core.domain.component.impl.DefaultEmbeddedComponent;
 
-import java.util.Set;
+public class EmbeddedComponents {
 
-public interface DependentComponent {
+    private EmbeddedComponents() {}
 
-    public Resource getResource();
-
-    public Set<String> getDependencies();
-
-    public Component getComponent();
-
-    public String getResourceType();
-
-    public String getResourceSuperType();
-
-    public Set<EmbeddedComponent> getEmbeddedComponents();
+    public static EmbeddedComponent forRelativePathAndResourceType(String relativePath, String resourceType) {
+        return new DefaultEmbeddedComponent(relativePath, resourceType);
+    }
 
 }

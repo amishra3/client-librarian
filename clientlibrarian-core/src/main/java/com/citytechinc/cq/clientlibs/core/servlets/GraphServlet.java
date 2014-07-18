@@ -194,20 +194,6 @@ public class GraphServlet extends SlingSafeMethodsServlet {
                 jsonStatusMessages.put("Failed to build JSON.");
                 statusCode = 500;
 
-            } catch (InvalidQueryException e) {
-
-                // error, log it set status code
-                LOGGER.error("An error occurred. Returning 500.", e);
-                jsonStatusMessages.put("Failed to build JSON.");
-                statusCode = 500;
-
-            } catch (RepositoryException e) {
-
-                // error, log it set status code
-                LOGGER.error("An error occurred. Returning 500.", e);
-                jsonStatusMessages.put("Failed to build JSON.");
-                statusCode = 500;
-
             }
 
         } else {
