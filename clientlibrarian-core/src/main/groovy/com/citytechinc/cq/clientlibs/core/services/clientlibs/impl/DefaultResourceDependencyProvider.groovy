@@ -20,12 +20,15 @@ import com.citytechinc.cq.clientlibs.api.domain.component.EmbeddedComponent
 import com.citytechinc.cq.clientlibs.api.domain.library.ClientLibrary
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ClientLibraryManager
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ResourceDependencyProvider
+import com.citytechinc.cq.clientlibs.api.services.clientlibs.ResourceProviderHelper
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.ClientLibraryCompilationException
 import com.citytechinc.cq.clientlibs.api.services.components.DependentComponentManager
 import com.citytechinc.cq.clientlibs.api.util.ComponentUtils
 import com.google.common.collect.Queues
 import com.google.common.collect.Sets
 import org.apache.felix.scr.annotations.Component
+import org.apache.felix.scr.annotations.ReferenceCardinality
+import org.apache.felix.scr.annotations.ReferencePolicy
 import org.apache.felix.scr.annotations.Service
 import org.apache.sling.api.resource.Resource
 import org.apache.sling.api.resource.SyntheticResource
@@ -45,6 +48,9 @@ class DefaultResourceDependencyProvider implements ResourceDependencyProvider {
 
     @org.apache.felix.scr.annotations.Reference
     private DependentComponentManager dependentComponentManager
+
+    @org.apache.felix.scr.annotations.Reference( cardinality = ReferenceCardinality.OPTIONAL_MULTIPLE, policy = ReferencePolicy.DYNAMIC, bind = "bindResourceDependencyProviderHelper", unbind = "unbindResourceDependencyProviderHelper", referenceInterface = ResourceProviderHelper )
+    private final Map<String, Set<ResourceProviderHelper>> resourceProviderHelperByResourceTypeMap = [:]
 
     @Override
     Set<ClientLibrary> getDependenciesForResource(Resource r) throws ClientLibraryCompilationException {
@@ -100,6 +106,20 @@ class DefaultResourceDependencyProvider implements ResourceDependencyProvider {
                     }
                 }
             }
+
+            //TODO: Switch to checking is resource type on the resource itself
+            Set<ResourceProviderHelper> helpersForType = resourceProviderHelperByResourceTypeMap.get(currentResourceUnderProcessing.resourceType)
+
+            if (helpersForType != null) {
+                helpersForType.each{ ResourceProviderHelper currentHelper ->
+                    currentHelper.getContainedResources(currentResourceUnderProcessing).each { Resource currentContainedResource ->
+                        if (!flattenedResourcesByPath.containsKey(currentContainedResource.path)) {
+                            resourceProcessingQueue.add(currentContainedResource)
+                            flattenedResourcesByPath.put(currentContainedResource.path, currentContainedResource)
+                        }
+                    }
+                }
+            }
         }
 
         return dependencies
@@ -118,6 +138,42 @@ class DefaultResourceDependencyProvider implements ResourceDependencyProvider {
         }
 
         return null
+
+    }
+
+    protected void bindResourceProviderHelper(ResourceProviderHelper resourceProviderHelper) {
+
+        LOG.debug("Binding ResourceProviderHelper " + resourceProviderHelper)
+
+        synchronized (resourceProviderHelperByResourceTypeMap) {
+
+            resourceProviderHelper.resourceTypesServed.each {
+                if (!resourceProviderHelperByResourceTypeMap.containsKey(it)) {
+                    resourceProviderHelperByResourceTypeMap.put(it, [])
+                }
+
+                resourceProviderHelperByResourceTypeMap.get(it).add(resourceProviderHelper)
+            }
+
+        }
+
+    }
+
+    protected void unbindResourceProviderHelper(ResourceProviderHelper resourceProviderHelper) {
+
+        LOG.debug("Unbinding ResourceProviderHelper " + resourceProviderHelper)
+
+        synchronized (resourceProviderHelperByResourceTypeMap) {
+
+            resourceProviderHelper.resourceTypesServed.each {
+
+                if (resourceProviderHelperByResourceTypeMap.containsKey(it)) {
+                    resourceProviderHelperByResourceTypeMap.get(it).remove(resourceProviderHelper)
+                }
+
+            }
+
+        }
 
     }
 
