@@ -82,6 +82,8 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
     protected ClientLibraryRepositoryStateManager stateManager
 
+    protected final ReentrantReadWriteLock resourceDependencyProviderListReadWriteLock = new ReentrantReadWriteLock(false);
+
     protected DefaultClientLibraryRepository(final List<ResourceDependencyProvider> resourceDependencyProviderList,
                                              final ClientLibraryRepositoryStateManager stateManager) {
         this.resourceDependencyProviderList = resourceDependencyProviderList;
@@ -124,31 +126,67 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
     }
 
-    protected final ReentrantReadWriteLock resourceDependencyProviderListReadWriteLock = new ReentrantReadWriteLock(false);
-
     protected void bindDependencyProvider(ResourceDependencyProvider resourceDependencyProvider) {
-        LOG.debug("Binding ResourceDependencyProvider " + resourceDependencyProvider)
+        if(LOG.isDebugEnabled()) {
+            LOG.debug("Binding ResourceDependencyProvider " + resourceDependencyProvider)
+        }
+
+        boolean resourceDependencyProviderListContains = false
 
         try {
-            this.resourceDependencyProviderListReadWriteLock.writeLock().lock()
-            if (!resourceDependencyProviderList.add(resourceDependencyProvider)) {
-                LOG.error(resourceDependencyProvider + " already exists in the services Resource Dependency Provider List")
+            this.resourceDependencyProviderListReadWriteLock.readLock().lock()
+            resourceDependencyProviderListContains = resourceDependencyProviderList.contains(resourceDependencyProvider);
+        } finally {
+            this.resourceDependencyProviderListReadWriteLock.readLock().unlock()
+        }
+
+        if(resourceDependencyProviderListContains) {
+            LOG.error(resourceDependencyProvider + " already exists in the services Resource Dependency Provider List")
+        }else {
+
+            try {
+                this.resourceDependencyProviderListReadWriteLock.writeLock().lock()
+                boolean resourceDependencyProviderListAdd = this.resourceDependencyProviderList.add(resourceDependencyProvider)
+
+                if(resourceDependencyProviderListAdd) {
+                    LOG.error(resourceDependencyProvider + " already exists in the services Resource Dependency Provider List after contains check")
+                }
+            } finally {
+                this.resourceDependencyProviderListReadWriteLock.writeLock().unlock()
             }
-        }finally {
-            this.resourceDependencyProviderListReadWriteLock.writeLock().unlock()
+
         }
     }
 
     protected void unbindDependencyProvider(ResourceDependencyProvider resourceDependencyProvider) {
-        LOG.debug("Unbinding ResourceDependencyProvider " + resourceDependencyProvider)
+        if(LOG.isDebugEnabled()) {
+            LOG.debug("Unbinding ResourceDependencyProvider " + resourceDependencyProvider)
+        }
+
+        boolean resourceDependencyProviderListContains = false
 
         try {
-            this.resourceDependencyProviderListReadWriteLock.writeLock().lock()
-            if (!resourceDependencyProviderList.remove(resourceDependencyProvider)) {
-                LOG.error("An attempt to unbind " + resourceDependencyProvider + " was made however this dependency provider is not in the current list of known providers")
+            this.resourceDependencyProviderListReadWriteLock.readLock().lock()
+            resourceDependencyProviderListContains = resourceDependencyProviderList.contains(resourceDependencyProvider);
+        } finally {
+            this.resourceDependencyProviderListReadWriteLock.readLock().unlock()
+        }
+
+        if(resourceDependencyProviderListContains) {
+            LOG.error("An attempt to unbind " + resourceDependencyProvider + " was made however this dependency provider is not in the current list of known providers")
+        }else {
+
+            try {
+                this.resourceDependencyProviderListReadWriteLock.writeLock().lock()
+                boolean resourceDependencyProviderListRemove = resourceDependencyProviderList.remove(resourceDependencyProvider)
+
+                if(resourceDependencyProviderListRemove) {
+                    LOG.error("An attempt to unbind " + resourceDependencyProvider + " was made however this dependency provider is not in the current list of known providers after contains check")
+                }
+            } finally {
+                this.resourceDependencyProviderListReadWriteLock.writeLock().unlock()
             }
-        }finally {
-            this.resourceDependencyProviderListReadWriteLock.writeLock().unlock()
+
         }
     }
 
