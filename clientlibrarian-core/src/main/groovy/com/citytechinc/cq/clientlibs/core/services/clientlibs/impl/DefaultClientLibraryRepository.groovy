@@ -44,7 +44,6 @@ import javax.jcr.query.InvalidQueryException
 
 import org.apache.sling.commons.osgi.PropertiesUtil
 
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
@@ -125,18 +124,18 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
     }
 
-    protected final ReentrantReadWriteLock reentrantReadWriteLock = new ReentrantReadWriteLock(false);
+    protected final ReentrantReadWriteLock resourceDependencyProviderListReadWriteLock = new ReentrantReadWriteLock(false);
 
     protected void bindDependencyProvider(ResourceDependencyProvider resourceDependencyProvider) {
         LOG.debug("Binding ResourceDependencyProvider " + resourceDependencyProvider)
 
         try {
-            this.reentrantReadWriteLock.writeLock().lock()
+            this.resourceDependencyProviderListReadWriteLock.writeLock().lock()
             if (!resourceDependencyProviderList.add(resourceDependencyProvider)) {
                 LOG.error(resourceDependencyProvider + " already exists in the services Resource Dependency Provider List")
             }
         }finally {
-            this.reentrantReadWriteLock.writeLock().unlock()
+            this.resourceDependencyProviderListReadWriteLock.writeLock().unlock()
         }
     }
 
@@ -144,12 +143,12 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         LOG.debug("Unbinding ResourceDependencyProvider " + resourceDependencyProvider)
 
         try {
-            this.reentrantReadWriteLock.writeLock().lock()
+            this.resourceDependencyProviderListReadWriteLock.writeLock().lock()
             if (!resourceDependencyProviderList.remove(resourceDependencyProvider)) {
                 LOG.error("An attempt to unbind " + resourceDependencyProvider + " was made however this dependency provider is not in the current list of known providers")
             }
         }finally {
-            this.reentrantReadWriteLock.writeLock().unlock()
+            this.resourceDependencyProviderListReadWriteLock.writeLock().unlock()
         }
     }
 
@@ -274,10 +273,10 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         List<ResourceDependencyProvider> resourceDependencyProviderListCopy = null
 
         try {
-            this.reentrantReadWriteLock.readLock().lock()
+            this.resourceDependencyProviderListReadWriteLock.readLock().lock()
             resourceDependencyProviderListCopy = ImmutableList.copyOf(resourceDependencyProviderList)
         }finally {
-            this.reentrantReadWriteLock.readLock().unlock()
+            this.resourceDependencyProviderListReadWriteLock.readLock().unlock()
         }
 
         return stateManager.requestDependencyGraph(root, resourceDependencyProviderListCopy)
@@ -289,10 +288,10 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
 
         try {
-            this.reentrantReadWriteLock.readLock().lock()
+            this.resourceDependencyProviderListReadWriteLock.readLock().lock()
             resourceDependencyProviderListCopy = ImmutableList.copyOf(resourceDependencyProviderList)
         }finally {
-            this.reentrantReadWriteLock.readLock().unlock()
+            this.resourceDependencyProviderListReadWriteLock.readLock().unlock()
         }
 
         return stateManager.requestOrderedDependencies( root, resourceDependencyProviderListCopy )
