@@ -1,5 +1,6 @@
 package com.citytechinc.cq.clientlibs.core.services.clientlibs.impl;
 
+import com.citytechinc.cq.clientlibs.api.services.clientlibs.ResourceDependencyProvider;
 import com.google.common.base.Stopwatch;
 
 import java.util.ArrayList;
@@ -33,6 +34,35 @@ public abstract class BaseConcurrencyTest {
             try { Thread.sleep(this.milliseconds); }catch(final Exception e) {};
         }
     }
+
+    protected final class SlowList<T> extends ArrayList<T> {
+        protected List listDelegate;
+        protected int readSlowDownInSeconds, writeSlowDownInSeconds;
+
+        public SlowList(int readSlowDownInSeconds, int writeSlowDownInSeconds, List listDelegate) {
+            this.listDelegate = listDelegate;
+            this.readSlowDownInSeconds = readSlowDownInSeconds;
+            this.writeSlowDownInSeconds = writeSlowDownInSeconds;
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            letsSlowDown(this.readSlowDownInSeconds * 1000).on("contains");
+            return this.listDelegate.contains(o);
+        }
+
+        @Override
+        public boolean add(Object e) {
+            letsSlowDown(this.writeSlowDownInSeconds * 1000).on("add");
+            return this.listDelegate.add(e);
+        };
+
+        @Override
+        public boolean remove(Object o) {
+            letsSlowDown(this.writeSlowDownInSeconds * 1000).on("remove");
+            return this.listDelegate.remove(o);
+        }
+    };
 
     protected abstract class NamedRunnable implements Runnable {
         protected String marker;

@@ -16,6 +16,7 @@
 package com.citytechinc.cq.clientlibs.core.services.clientlibs.impl;
 
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ResourceDependencyProvider;
+import com.citytechinc.cq.clientlibs.api.services.clientlibs.transformer.VariableProvider;
 import com.citytechinc.cq.clientlibs.core.services.clientlibs.state.manager.impl.ClientLibraryRepositoryStateManager;
 import org.apache.sling.api.resource.Resource;
 import org.junit.Before;
@@ -24,11 +25,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultClientLibraryRepositoryTest extends BaseConcurrencyTest {
@@ -39,6 +39,7 @@ public class DefaultClientLibraryRepositoryTest extends BaseConcurrencyTest {
     // Reads are set to be 5 x faster than writes
     //
     List<ResourceDependencyProvider> slowResourceDependencyProviderList;
+    List<VariableProvider> slowVariableProviderList;
 
 
     // This is a mock list that a test can use to verify interaction or mock interactions
@@ -47,49 +48,59 @@ public class DefaultClientLibraryRepositoryTest extends BaseConcurrencyTest {
     @Mock
     List<ResourceDependencyProvider> mockResourceDependencyProviderListInternal;
 
+    // The 'slowVariableProviderList' delegates list operations to this mock.
+    //
+    @Mock
+    List<ResourceDependencyProvider> mockVariableProviderListInternal;
+
     @Mock
     ClientLibraryRepositoryStateManager clientLibraryRepositoryStateManager;
 
     @Before
     public void before() {
-        slowResourceDependencyProviderList = new ArrayList<ResourceDependencyProvider>() {
-            @Override
-            public boolean contains(Object o) {
-//                letsSlowDown(two_seconds).on("contains");
-                return mockResourceDependencyProviderListInternal.contains(o);
-            }
-
-            @Override
-            public boolean add(ResourceDependencyProvider e) {
-//                letsSlowDown(ten_seconds).on("add");
-                return mockResourceDependencyProviderListInternal.add(e);
-            };
-
-            @Override
-            public boolean remove(Object o) {
-//                letsSlowDown(ten_seconds).on("remove");
-                return mockResourceDependencyProviderListInternal.remove(o);
-            }
-        };
+//        slowResourceDependencyProviderList = new SlowList<ResourceDependencyProvider>(2, 10, mockResourceDependencyProviderListInternal);
+//        slowVariableProviderList = new SlowList<VariableProvider>(2, 10, mockVariableProviderListInternal);
+        slowResourceDependencyProviderList = new SlowList<ResourceDependencyProvider>(0, 0, mockResourceDependencyProviderListInternal);
+        slowVariableProviderList = new SlowList<VariableProvider>(0, 0, mockVariableProviderListInternal);
     }
 
     @Test
     public void should() throws Exception {
+        final ReentrantReadWriteLock resourceDependencyProviderListReadWriteLock = spy(new ReentrantReadWriteLock(false));
+        final ReentrantReadWriteLock variableProviderListReadWriteLock = spy(new ReentrantReadWriteLock(false));
+
         final DefaultClientLibraryRepository defaultClientLibraryRepository =
-            new DefaultClientLibraryRepository(slowResourceDependencyProviderList, clientLibraryRepositoryStateManager);
+            new DefaultClientLibraryRepository(
+                    slowResourceDependencyProviderList,
+                    slowVariableProviderList,
+                    clientLibraryRepositoryStateManager,
+                    resourceDependencyProviderListReadWriteLock,
+                    variableProviderListReadWriteLock);
 
         final ResourceDependencyProvider bindResourceDependencyProvider = mock(ResourceDependencyProvider.class);
         final ResourceDependencyProvider unbindResourceDependencyProvider = mock(ResourceDependencyProvider.class);
 
+        final VariableProvider bindVariableProvider = mock(VariableProvider.class);
+        final VariableProvider unbindVariableProvider = mock(VariableProvider.class);
+
         final Resource resource = mock(Resource.class);
+        final String library = "library";
+
 
         // If we are binding, then report 'false' to cause an 'add'
         when(mockResourceDependencyProviderListInternal.contains(bindResourceDependencyProvider))
             .thenReturn(false);
 
+        when(mockVariableProviderListInternal.contains(bindVariableProvider))
+            .thenReturn(false);
+
         // If we are unbinding, then report 'true' to cause 'remove'
         when(mockResourceDependencyProviderListInternal.contains(unbindResourceDependencyProvider))
             .thenReturn(true);
+
+        when(mockVariableProviderListInternal.contains(unbindVariableProvider))
+            .thenReturn(true);
+
 
         super.split(new NamedRunnable("bindDependencyProvider") {
             @Override
@@ -111,6 +122,30 @@ public class DefaultClientLibraryRepositoryTest extends BaseConcurrencyTest {
             public void run() {
                 try {
                     defaultClientLibraryRepository.getOrderedDependencies(resource);
+                } catch (Exception e) {
+                }
+            }
+        }, new NamedRunnable("transformLibrary") {
+            @Override
+            public void run() {
+                try {
+                    defaultClientLibraryRepository.transformLibrary(resource, library);
+                } catch (Exception e) {
+                }
+            }
+        }, new NamedRunnable("bindVariableProvider") {
+            @Override
+            public void run() {
+                try {
+                    defaultClientLibraryRepository.bindVariableProvider(bindVariableProvider);
+                } catch (Exception e) {
+                }
+            }
+        }, new NamedRunnable("unbindVariableProvider") {
+            @Override
+            public void run() {
+                try {
+                    defaultClientLibraryRepository.unbindVariableProvider(unbindVariableProvider);
                 } catch (Exception e) {
                 }
             }

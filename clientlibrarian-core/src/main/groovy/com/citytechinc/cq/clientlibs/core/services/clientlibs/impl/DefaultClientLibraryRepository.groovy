@@ -59,10 +59,10 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultClientLibraryRepository.class)
 
     @Reference( cardinality = ReferenceCardinality.MANDATORY_MULTIPLE, policy = ReferencePolicy.DYNAMIC, bind = "bindDependencyProvider", unbind = "unbindDependencyProvider", referenceInterface = ResourceDependencyProvider )
-    protected final List<ResourceDependencyProvider> resourceDependencyProviderList;
+    protected final List<ResourceDependencyProvider> resourceDependencyProviderList
 
     @Reference( cardinality = ReferenceCardinality.OPTIONAL_MULTIPLE, policy = ReferencePolicy.DYNAMIC, bind = "bindVariableProvider", unbind = "unbindVariableProvider", referenceInterface = VariableProvider )
-    private final List<VariableProvider> variableProviderList = []
+    protected final List<VariableProvider> variableProviderList
 
     @Reference
     private ClientLibraryManager clientLibraryManager
@@ -82,20 +82,30 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
     protected ClientLibraryRepositoryStateManager stateManager
 
-    protected final ReentrantReadWriteLock resourceDependencyProviderListReadWriteLock = new ReentrantReadWriteLock(false);
+    protected ReentrantReadWriteLock resourceDependencyProviderListReadWriteLock
+    protected ReentrantReadWriteLock variableProviderListReadWriteLock
 
-    protected DefaultClientLibraryRepository(final List<ResourceDependencyProvider> resourceDependencyProviderList,
-                                             final ClientLibraryRepositoryStateManager stateManager) {
+
+    protected DefaultClientLibraryRepository(List<ResourceDependencyProvider> resourceDependencyProviderList,
+                                             List<VariableProvider> variableProviderList,
+                                             ClientLibraryRepositoryStateManager stateManager,
+                                             ReentrantReadWriteLock resourceDependencyProviderListReadWriteLock,
+                                             ReentrantReadWriteLock variableProviderListReadWriteLock) {
+
         this.resourceDependencyProviderList = resourceDependencyProviderList;
+        this.variableProviderList = variableProviderList;
         this.stateManager = stateManager
+        this.resourceDependencyProviderListReadWriteLock = resourceDependencyProviderListReadWriteLock
+        this.variableProviderListReadWriteLock = variableProviderListReadWriteLock
     }
+
 
     DefaultClientLibraryRepository() {
-        this.resourceDependencyProviderList = [];
+        this.resourceDependencyProviderList = []
+        this.variableProviderList = []
+        this.resourceDependencyProviderListReadWriteLock = new ReentrantReadWriteLock(false)
+        this.variableProviderListReadWriteLock = new ReentrantReadWriteLock(false)
     }
-
-
-
 
 
     @Activate
@@ -191,33 +201,63 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     }
 
     protected void bindVariableProvider(VariableProvider variableProvider) {
-
-        LOG.debug("Binding VariableProvider " + variableProvider)
-
-        synchronized (variableProviderList) {
-            if (variableProviderList.contains(variableProvider)) {
-                LOG.error(variableProvider + " already exists in the service's Variable Provider List")
-            }
-            else {
-                variableProviderList.add(variableProvider)
-            }
+        if(LOG.isDebugEnabled()) {
+            LOG.debug("Binding VariableProvider " + variableProvider)
         }
 
+        boolean variableProviderListContains = false
+
+        try {
+            this.variableProviderListReadWriteLock.readLock().lock()
+            variableProviderListContains = variableProviderList.contains(variableProvider)
+        }finally {
+            this.variableProviderListReadWriteLock.readLock().unlock()
+        }
+
+        if(variableProviderListContains) {
+            LOG.error(variableProvider + " already exists in the service's Variable Provider List")
+        }else {
+            try {
+                this.variableProviderListReadWriteLock.writeLock().lock()
+                boolean variableProviderListAdd = this.variableProviderList.add(variableProvider)
+
+                if(variableProviderListAdd) {
+                    LOG.error(variableProvider + " already exists in the service's Variable Provider List after contains check")
+                }
+            }finally {
+                this.variableProviderListReadWriteLock.writeLock().unlock()
+            }
+        }
     }
 
     protected void unbindVariableProvider(VariableProvider variableProvider) {
-
-        LOG.debug("Unbinding VariableProvider " + variableProvider)
-
-        synchronized (variableProviderList) {
-            if (variableProviderList.contains(variableProvider)) {
-                variableProviderList.remove(variableProvider)
-            }
-            else {
-                LOG.error("An attempt to unbind " + variableProvider + " was made however this dependency provider is not in the current list of known providers")
-            }
+        if(LOG.isDebugEnabled()) {
+            LOG.debug("Unbinding VariableProvider " + variableProvider)
         }
 
+        boolean variableProviderListContains = false
+
+        try {
+            this.variableProviderListReadWriteLock.readLock().lock()
+            variableProviderListContains = variableProviderList.contains(variableProvider)
+        }finally {
+            this.variableProviderListReadWriteLock.readLock().unlock()
+        }
+
+        if(variableProviderListContains) {
+            LOG.error(variableProvider + " already exists in the service's Variable Provider List")
+        }else {
+            try {
+                this.variableProviderListReadWriteLock.writeLock().lock()
+                boolean variableProviderListRemove = this.variableProviderList.remove(variableProvider)
+
+                if(variableProviderListRemove) {
+                    LOG.error("An attempt to unbind " + variableProvider + " was made however this dependency provider is not in the current list of known providers after contains check")
+                }
+            }finally {
+                this.variableProviderListReadWriteLock.writeLock().unlock()
+            }
+        }
     }
 
     @Override
@@ -284,13 +324,16 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
      * @param library
      * @return
      */
-    private String transformLibrary(Resource root, String library) {
+    protected String transformLibrary(Resource root, String library) {
 
         String retLibrary = library
         List<VariableProvider> variableProviderListCopy = null
 
-        synchronized (variableProviderList) {
+        try {
+            this.variableProviderListReadWriteLock.readLock().lock()
             variableProviderListCopy = ImmutableList.copyOf(variableProviderList)
+        }finally {
+            this.variableProviderListReadWriteLock.readLock().unlock()
         }
 
         Map<String, String> variables = [:]
