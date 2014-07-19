@@ -49,7 +49,7 @@ class DefaultResourceDependencyProvider implements ResourceDependencyProvider {
     @org.apache.felix.scr.annotations.Reference
     private DependentComponentManager dependentComponentManager
 
-    @org.apache.felix.scr.annotations.Reference( cardinality = ReferenceCardinality.OPTIONAL_MULTIPLE, policy = ReferencePolicy.DYNAMIC, bind = "bindResourceDependencyProviderHelper", unbind = "unbindResourceDependencyProviderHelper", referenceInterface = ResourceProviderHelper )
+    @org.apache.felix.scr.annotations.Reference( cardinality = ReferenceCardinality.OPTIONAL_MULTIPLE, policy = ReferencePolicy.DYNAMIC, bind = "bindResourceProviderHelper", unbind = "unbindResourceProviderHelper", referenceInterface = ResourceProviderHelper )
     private final Map<String, Set<ResourceProviderHelper>> resourceProviderHelperByResourceTypeMap = [:]
 
     @Override
