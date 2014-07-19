@@ -38,7 +38,7 @@ public class ComponentUtils {
 
     public static Set<Resource> flattenResourceTree(Resource root, boolean inclusive) {
 
-        Iterator<Resource> typedResourceIterator = root.getResourceResolver().findResources(TYPED_COMPONENT_QUERY, Query.JCR_SQL2);
+        Iterator<Resource> typedResourceIterator = root.getResourceResolver().findResources(TYPED_COMPONENT_QUERY.replace("{path}", root.getPath()), Query.JCR_SQL2);
 
         Set<Resource> flattenedResourceTree = Sets.newHashSet(typedResourceIterator);
 
