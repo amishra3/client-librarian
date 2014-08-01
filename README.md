@@ -123,6 +123,34 @@ only be included in environments running in all of the modes specified by the co
 For example, a Client Library with a ```runModes``` property of ```dev.node1.publish``` will be included if the AEM
 environment is running in all three run modes: dev, node1, and publish.
 
+### Embedded Resources - or - Dealing With Baked In Components
+
+Template and component rendering scripts often bake-in component instances using mechanisms such as the ```cq:include```
+jsp tag.  Resources included in this way do not actually exist in the resource tree and as such, given the fact that the
+Client Librarian's default dependency provider looks to the resource tree to determine what component instances are on
+a given page, will not be found by the default dependency provider.  There are numerous ways to deal with this situation.
+
+#### Including the Dependencies on the Embedding Component
+
+Client Library dependencies can be included on the component definition of the embedding component as well as that of the
+embedded component.  This has the obvious downside of duplicating the dependency definition but semantically makes sense
+as the embedding component has dependency on the embedded component.
+
+#### Use Templates as Content
+
+Components may be defined with a ```cq:template``` node or a ```cq:templatePath``` attribute which defines the content
+to be stubbed out upon instantiation of the Component.  By using these templates, resources can be created in the resource
+tree for embedded components along with the embedding component and once the resources are in the tree, the default
+dependency provider will be able to find them.
+
+#### Explicitly Indicating the Embedded Components
+
+The ```embed``` property on the .content.xml file of a Component indicates to the Client Librarian those Components which
+are Baked-In by the embedding Component.  This property takes a list of component descriptors of the form
+```path:type``` where ```path``` is the relative path to the Baked-In Component and ```type``` is the ```sling:resourceType```
+of the Baked-In Component.  Using this attribute the Client Librarian can be made aware of those component instances which
+may not actually exist in the resource tree but are baked in by component instances which do in-fact exist in the resource tree.
+
 ### Library Versioning
 
 *Coming Soon*
