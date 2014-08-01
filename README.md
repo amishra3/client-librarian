@@ -200,3 +200,28 @@ place holder variables will be left un-touched.
 
 **Note:** if multiple Variable Provider services provide bindings for the same variable name, the behavior, specifically concerning
 which binding "wins," is undefined.
+
+### Resource Provider Helpers
+
+In some cases, Resources rendered on the page are not represented in the resource tree of the page.  This is often the case
+for Baked-In or embedded components and Inheriting Paragraph Systems.  In the former case, the [Embed property](#explicitly-indicating-the-embedded-components)
+may assist in providing the resource definitions to the Client Librarian.  In the case of an Inheriting Paragraph System however,
+the contents of the Paragraph System can not be explicitly declared in code as they are variable based on authoring.
+Services implementing the ```ResourceProviderHelper``` interface assist in the collection of such Resources.  This
+interface exposes two methods:
+
+```
+public Set<Resource> getContainedResources(Resource resource);
+
+public Set<String> getResourceTypesServed();
+```
+
+Each ```ResourceProviderHelper``` service implementation will only assist in providing resources for a certain resource
+type.  The types assisted are indicated by the return value of the ```getResourceTypesServed``` method.  For served
+resource type instances, the Client Librarian will call the ```getContainedResources``` method of the service implementation
+passing in the resource being assisted.
+
+Out of the box the Client Librarian provides one ```ResourceProviderHelper``` implementation, the
+```IParsysResourceProviderHelper```.  As described in the example above this service implementation assists resources
+of type ```foundation/components/iparsys``` by looking up the page tree for inherited paragraphs while respecting the
+disabled and cancelled configurations of the current and intermediate inheriting paragraph systems.
