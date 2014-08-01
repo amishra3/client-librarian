@@ -44,6 +44,8 @@ import javax.jcr.query.InvalidQueryException
 
 import org.apache.sling.commons.osgi.PropertiesUtil
 
+import java.util.concurrent.locks.ReentrantReadWriteLock
+
 /**
  *
  */
@@ -57,10 +59,10 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultClientLibraryRepository.class)
 
     @Reference( cardinality = ReferenceCardinality.MANDATORY_MULTIPLE, policy = ReferencePolicy.DYNAMIC, bind = "bindDependencyProvider", unbind = "unbindDependencyProvider", referenceInterface = ResourceDependencyProvider )
-    private final List<ResourceDependencyProvider> resourceDependencyProviderList = []
+    protected final List<ResourceDependencyProvider> resourceDependencyProviderList
 
     @Reference( cardinality = ReferenceCardinality.OPTIONAL_MULTIPLE, policy = ReferencePolicy.DYNAMIC, bind = "bindVariableProvider", unbind = "unbindVariableProvider", referenceInterface = VariableProvider )
-    private final List<VariableProvider> variableProviderList = []
+    protected final List<VariableProvider> variableProviderList
 
     @Reference
     private ClientLibraryManager clientLibraryManager
@@ -78,7 +80,33 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     private static final String STRICT_JAVASCRIPT = "strictJavascript"
     private Boolean strictJavascript
 
-    private ClientLibraryRepositoryStateManager stateManager
+    protected ClientLibraryRepositoryStateManager stateManager
+
+    protected ReentrantReadWriteLock resourceDependencyProviderListReadWriteLock
+    protected ReentrantReadWriteLock variableProviderListReadWriteLock
+
+
+    protected DefaultClientLibraryRepository(List<ResourceDependencyProvider> resourceDependencyProviderList,
+                                             List<VariableProvider> variableProviderList,
+                                             ClientLibraryRepositoryStateManager stateManager,
+                                             ReentrantReadWriteLock resourceDependencyProviderListReadWriteLock,
+                                             ReentrantReadWriteLock variableProviderListReadWriteLock) {
+
+        this.resourceDependencyProviderList = resourceDependencyProviderList;
+        this.variableProviderList = variableProviderList;
+        this.stateManager = stateManager
+        this.resourceDependencyProviderListReadWriteLock = resourceDependencyProviderListReadWriteLock
+        this.variableProviderListReadWriteLock = variableProviderListReadWriteLock
+    }
+
+
+    DefaultClientLibraryRepository() {
+        this.resourceDependencyProviderList = []
+        this.variableProviderList = []
+        this.resourceDependencyProviderListReadWriteLock = new ReentrantReadWriteLock(false)
+        this.variableProviderListReadWriteLock = new ReentrantReadWriteLock(false)
+    }
+
 
     @Activate
     protected void activate( Map<String, Object> properties ) throws RepositoryException, LoginException {
@@ -109,61 +137,127 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     }
 
     protected void bindDependencyProvider(ResourceDependencyProvider resourceDependencyProvider) {
+        if(LOG.isDebugEnabled()) {
+            LOG.debug("Binding ResourceDependencyProvider " + resourceDependencyProvider)
+        }
 
-        LOG.debug("Binding ResourceDependencyProvider " + resourceDependencyProvider)
+        boolean resourceDependencyProviderListContains = false
 
-        synchronized (resourceDependencyProviderList) {
-            if (resourceDependencyProviderList.contains(resourceDependencyProvider)) {
-                LOG.error(resourceDependencyProvider + " already exists in the services Resource Dependency Provider List")
+        try {
+            this.resourceDependencyProviderListReadWriteLock.readLock().lock()
+            resourceDependencyProviderListContains = resourceDependencyProviderList.contains(resourceDependencyProvider);
+        } finally {
+            this.resourceDependencyProviderListReadWriteLock.readLock().unlock()
+        }
+
+        if(resourceDependencyProviderListContains) {
+            LOG.error(resourceDependencyProvider + " already exists in the services Resource Dependency Provider List")
+        }else {
+
+            try {
+                this.resourceDependencyProviderListReadWriteLock.writeLock().lock()
+                boolean resourceDependencyProviderListAdd = this.resourceDependencyProviderList.add(resourceDependencyProvider)
+
+                if(resourceDependencyProviderListAdd) {
+                    LOG.error(resourceDependencyProvider + " already exists in the services Resource Dependency Provider List after contains check")
+                }
+            } finally {
+                this.resourceDependencyProviderListReadWriteLock.writeLock().unlock()
             }
-            else {
-                resourceDependencyProviderList.add(resourceDependencyProvider)
-            }
+
         }
     }
 
     protected void unbindDependencyProvider(ResourceDependencyProvider resourceDependencyProvider) {
+        if(LOG.isDebugEnabled()) {
+            LOG.debug("Unbinding ResourceDependencyProvider " + resourceDependencyProvider)
+        }
 
-        LOG.debug("Unbinding ResourceDependencyProvider " + resourceDependencyProvider)
+        boolean resourceDependencyProviderListContains = false
 
-        synchronized (resourceDependencyProviderList) {
-            if (resourceDependencyProviderList.contains(resourceDependencyProvider)) {
-                resourceDependencyProviderList.remove(resourceDependencyProvider)
+        try {
+            this.resourceDependencyProviderListReadWriteLock.readLock().lock()
+            resourceDependencyProviderListContains = resourceDependencyProviderList.contains(resourceDependencyProvider);
+        } finally {
+            this.resourceDependencyProviderListReadWriteLock.readLock().unlock()
+        }
+
+        if(resourceDependencyProviderListContains) {
+            LOG.error("An attempt to unbind " + resourceDependencyProvider + " was made however this dependency provider is not in the current list of known providers")
+        }else {
+
+            try {
+                this.resourceDependencyProviderListReadWriteLock.writeLock().lock()
+                boolean resourceDependencyProviderListRemove = resourceDependencyProviderList.remove(resourceDependencyProvider)
+
+                if(resourceDependencyProviderListRemove) {
+                    LOG.error("An attempt to unbind " + resourceDependencyProvider + " was made however this dependency provider is not in the current list of known providers after contains check")
+                }
+            } finally {
+                this.resourceDependencyProviderListReadWriteLock.writeLock().unlock()
             }
-            else {
-                LOG.error("An attempt to unbind " + resourceDependencyProvider + " was made however this dependency provider is not in the current list of known providers")
-            }
+
         }
     }
 
     protected void bindVariableProvider(VariableProvider variableProvider) {
-
-        LOG.debug("Binding VariableProvider " + variableProvider)
-
-        synchronized (variableProviderList) {
-            if (variableProviderList.contains(variableProvider)) {
-                LOG.error(variableProvider + " already exists in the service's Variable Provider List")
-            }
-            else {
-                variableProviderList.add(variableProvider)
-            }
+        if(LOG.isDebugEnabled()) {
+            LOG.debug("Binding VariableProvider " + variableProvider)
         }
 
+        boolean variableProviderListContains = false
+
+        try {
+            this.variableProviderListReadWriteLock.readLock().lock()
+            variableProviderListContains = variableProviderList.contains(variableProvider)
+        }finally {
+            this.variableProviderListReadWriteLock.readLock().unlock()
+        }
+
+        if(variableProviderListContains) {
+            LOG.error(variableProvider + " already exists in the service's Variable Provider List")
+        }else {
+            try {
+                this.variableProviderListReadWriteLock.writeLock().lock()
+                boolean variableProviderListAdd = this.variableProviderList.add(variableProvider)
+
+                if(variableProviderListAdd) {
+                    LOG.error(variableProvider + " already exists in the service's Variable Provider List after contains check")
+                }
+            }finally {
+                this.variableProviderListReadWriteLock.writeLock().unlock()
+            }
+        }
     }
 
     protected void unbindVariableProvider(VariableProvider variableProvider) {
-
-        LOG.debug("Unbinding VariableProvider " + variableProvider)
-
-        synchronized (variableProviderList) {
-            if (variableProviderList.contains(variableProvider)) {
-                variableProviderList.remove(variableProvider)
-            }
-            else {
-                LOG.error("An attempt to unbind " + variableProvider + " was made however this dependency provider is not in the current list of known providers")
-            }
+        if(LOG.isDebugEnabled()) {
+            LOG.debug("Unbinding VariableProvider " + variableProvider)
         }
 
+        boolean variableProviderListContains = false
+
+        try {
+            this.variableProviderListReadWriteLock.readLock().lock()
+            variableProviderListContains = variableProviderList.contains(variableProvider)
+        }finally {
+            this.variableProviderListReadWriteLock.readLock().unlock()
+        }
+
+        if(variableProviderListContains) {
+            LOG.error(variableProvider + " already exists in the service's Variable Provider List")
+        }else {
+            try {
+                this.variableProviderListReadWriteLock.writeLock().lock()
+                boolean variableProviderListRemove = this.variableProviderList.remove(variableProvider)
+
+                if(variableProviderListRemove) {
+                    LOG.error("An attempt to unbind " + variableProvider + " was made however this dependency provider is not in the current list of known providers after contains check")
+                }
+            }finally {
+                this.variableProviderListReadWriteLock.writeLock().unlock()
+            }
+        }
     }
 
     @Override
@@ -230,13 +324,16 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
      * @param library
      * @return
      */
-    private String transformLibrary(Resource root, String library) {
+    protected String transformLibrary(Resource root, String library) {
 
         String retLibrary = library
         List<VariableProvider> variableProviderListCopy = null
 
-        synchronized (variableProviderList) {
+        try {
+            this.variableProviderListReadWriteLock.readLock().lock()
             variableProviderListCopy = ImmutableList.copyOf(variableProviderList)
+        }finally {
+            this.variableProviderListReadWriteLock.readLock().unlock()
         }
 
         Map<String, String> variables = [:]
@@ -253,28 +350,32 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
     }
 
-    private DependencyGraph<ClientLibrary> getDependencyGraph(Resource root) {
-
+    protected DependencyGraph<ClientLibrary> getDependencyGraph(Resource root) {
         List<ResourceDependencyProvider> resourceDependencyProviderListCopy = null
 
-        synchronized (resourceDependencyProviderList) {
+        try {
+            this.resourceDependencyProviderListReadWriteLock.readLock().lock()
             resourceDependencyProviderListCopy = ImmutableList.copyOf(resourceDependencyProviderList)
+        }finally {
+            this.resourceDependencyProviderListReadWriteLock.readLock().unlock()
         }
 
         return stateManager.requestDependencyGraph(root, resourceDependencyProviderListCopy)
-
     }
 
-    private List<ClientLibrary> getOrderedDependencies( Resource root ) throws InvalidQueryException, RepositoryException, InvalidClientLibraryCategoryException {
 
+    protected List<ClientLibrary> getOrderedDependencies( Resource root ) throws InvalidQueryException, RepositoryException, InvalidClientLibraryCategoryException {
         List<ResourceDependencyProvider> resourceDependencyProviderListCopy = null
 
-        synchronized (resourceDependencyProviderList) {
+
+        try {
+            this.resourceDependencyProviderListReadWriteLock.readLock().lock()
             resourceDependencyProviderListCopy = ImmutableList.copyOf(resourceDependencyProviderList)
+        }finally {
+            this.resourceDependencyProviderListReadWriteLock.readLock().unlock()
         }
 
         return stateManager.requestOrderedDependencies( root, resourceDependencyProviderListCopy )
-
     }
 
     private String compileJSClientLibrary( Resource root, List<ClientLibrary> dependencies ) {
