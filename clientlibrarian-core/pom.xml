@@ -42,7 +42,7 @@
                         <Bundle-Vendor>${project.parent.organization.name}</Bundle-Vendor>
                         <Export-Package>!*.impl,com.citytechinc.cq.clientlibs.core.*</Export-Package>
                         <Private-Package>org.mozilla,org.mozilla.*</Private-Package>
-                        <Import-Package>!org.mozilla,!org.mozilla.*,*</Import-Package>
+                        <Import-Package>!org.mozilla,!org.mozilla.*,!com.citytechinc.cq.clientlibs.core.*,*</Import-Package>
                     </instructions>
                 </configuration>
 			</plugin>
