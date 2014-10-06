@@ -40,9 +40,10 @@
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.name}</Bundle-Name>
                         <Bundle-Vendor>${project.parent.organization.name}</Bundle-Vendor>
-                        <Export-Package>!*.impl,com.citytechinc.cq.clientlibs.core.*</Export-Package>
+                        <!-- TODO: Readd the exclusion of impl - I have removed it for now to get self import of impl working -->
+                        <Export-Package>com.citytechinc.cq.clientlibs.core.*</Export-Package>
                         <Private-Package>org.mozilla,org.mozilla.*</Private-Package>
-                        <Import-Package>!org.mozilla,!org.mozilla.*,!com.citytechinc.cq.clientlibs.core.*,*</Import-Package>
+                        <Import-Package>!org.mozilla,!org.mozilla.*,*</Import-Package>
                     </instructions>
                 </configuration>
 			</plugin>
