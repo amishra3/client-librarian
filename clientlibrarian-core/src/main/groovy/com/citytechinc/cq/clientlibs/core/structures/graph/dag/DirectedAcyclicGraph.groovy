@@ -107,7 +107,8 @@ class DirectedAcyclicGraph<T> implements DependencyGraph<T> {
     public Set<Edge<T>> getEdges() {
         return edges;
     }
-/**
+
+    /**
      * A DFS implementation of a Topological sort on the Graph.
      *
      * http://en.wikipedia.org/wiki/Topological_sorting#Algorithms
@@ -118,7 +119,14 @@ class DirectedAcyclicGraph<T> implements DependencyGraph<T> {
 
         List<T> retList = new ArrayList<T>()
 
-        Map<T, VisitableNode> visitableNodes = nodes.collectEntries { [ ( it ) : new VisitableNode( payload:it ) ] }
+        /*
+         * Here we sort the set of Nodes prior to transforming them into visitable nodes.  This ensures that
+         * the ordering of unrelated nodes in the returned list of nodes is deterministic.  Previously, if two
+         * nodes had no direct or indirect edge between them, their ordering in the returned list of nodes
+         * was random.  Sorting the nodes prior to visiting them ensures unrelated nodes are visited in a
+         * consistent order and thus appear in a consistent order in the produced list.
+         */
+        Map<T, VisitableNode> visitableNodes = nodes.sort().collectEntries { [ ( it ) : new VisitableNode( payload:it ) ] }
 
         def visit
         visit = {

@@ -443,6 +443,25 @@ class DefaultClientLibrary implements ClientLibrary {
 
         return stringBuilder.toString()
     }
+
+    /**
+     * ClientLibrary comparison is based on the path to the library.  Two libraries with the same path
+     * are presumed to be the same library even if they are different object instances.  If the two
+     * libraries have different path then the result of the comparison is the result of the comparison of the paths.
+     *
+     * @param libraryComparedTo
+     * @return
+     */
+    @Override
+    int compareTo(ClientLibrary libraryComparedTo) {
+
+        if (libraryComparedTo == null) {
+            return 1;
+        }
+
+        return this.getClientLibraryPath().compareTo(libraryComparedTo.getClientLibraryPath());
+
+    }
 }
 
 

@@ -21,7 +21,7 @@ import com.google.common.base.Optional;
 import java.util.List;
 import java.util.Set;
 
-public interface ClientLibrary {
+public interface ClientLibrary extends Comparable<ClientLibrary> {
 
     public static final String CSS_FILE = "css.txt";
     public static final String JS_FILE = "js.txt";
