@@ -15,12 +15,14 @@
  */
 package com.citytechinc.cq.clientlibs.core.services.clientlibs.impl
 
+import com.citytechinc.cq.clientlibs.api.constants.Brands
 import com.citytechinc.cq.clientlibs.api.domain.library.ClientLibrary
 import com.citytechinc.cq.clientlibs.api.domain.library.LibraryType
 import com.citytechinc.cq.clientlibs.api.domain.library.exceptions.InvalidClientLibraryCategoryException
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ClientLibraryManager
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ClientLibraryRepository
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ResourceDependencyProvider
+import com.citytechinc.cq.clientlibs.api.services.clientlibs.cache.ClientLibraryCacheManager
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.compilers.less.LessCompiler
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.ClientLibraryCompilationException
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.transformer.VariableProvider
@@ -76,6 +78,9 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     @Reference
     SlingSettingsService slingSettingsService
 
+    @Reference
+    ClientLibraryCacheManager clientLibraryCacheManager
+
     @Property(label = "Strict Javascript", boolValue = false, description = "When set to true rendered JavaScript page libraries will start with a 'strict' directive")
     private static final String STRICT_JAVASCRIPT = "strictJavascript"
     private Boolean strictJavascript
@@ -84,19 +89,21 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
     protected ReentrantReadWriteLock resourceDependencyProviderListReadWriteLock
     protected ReentrantReadWriteLock variableProviderListReadWriteLock
-
+    protected ReentrantReadWriteLock libraryCacheReadWriteLock
 
     protected DefaultClientLibraryRepository(List<ResourceDependencyProvider> resourceDependencyProviderList,
                                              List<VariableProvider> variableProviderList,
                                              ClientLibraryRepositoryStateManager stateManager,
                                              ReentrantReadWriteLock resourceDependencyProviderListReadWriteLock,
-                                             ReentrantReadWriteLock variableProviderListReadWriteLock) {
+                                             ReentrantReadWriteLock variableProviderListReadWriteLock,
+                                             ReentrantReadWriteLock libraryCacheReadWriteLock) {
 
         this.resourceDependencyProviderList = resourceDependencyProviderList;
         this.variableProviderList = variableProviderList;
         this.stateManager = stateManager
         this.resourceDependencyProviderListReadWriteLock = resourceDependencyProviderListReadWriteLock
         this.variableProviderListReadWriteLock = variableProviderListReadWriteLock
+        this.libraryCacheReadWriteLock = libraryCacheReadWriteLock
     }
 
 
@@ -105,6 +112,7 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         this.variableProviderList = []
         this.resourceDependencyProviderListReadWriteLock = new ReentrantReadWriteLock(false)
         this.variableProviderListReadWriteLock = new ReentrantReadWriteLock(false)
+        this.libraryCacheReadWriteLock = new ReentrantReadWriteLock(false)
     }
 
 
@@ -274,47 +282,90 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     public String compileClientLibrary(Resource root, LibraryType type, Optional<String> brand) throws ClientLibraryCompilationException {
 
         try {
-            List<ClientLibrary> dependencies = getOrderedDependencies( root )
 
-            Set<String> currentRunModes = slingSettingsService.runModes
+            //Check whether a cached version of the library exists
+            def cachedLibraryResult = clientLibraryCacheManager.getCachedLibrary(root, type, brand.or(Brands.DEFAULT_BRAND))
 
-            LOG.debug( "Found dependencies for " + root.getPath() + " : " + dependencies )
+            if ( cachedLibraryResult ) {
 
-            /*
-             * Filter the included libraries based on run mode
-             */
-            List<ClientLibrary> filteredDependencies = dependencies.findAll { ClientLibrary currentDependency ->
+                LOG.debug("Cached Library was found for " + root.getPath());
+                return cachedLibraryResult
 
-                return currentDependency.isIncludedForRunModes(currentRunModes) &&
-                        currentDependency.isIncludedForBrand(brand)
+            }
+            //if a cached version was not found - grab the cache write lock and produce the version
+            libraryCacheReadWriteLock.writeLock().lock()
+
+            LOG.debug("Grabbed the Cache Write lock to produce the library for " + root.getPath());
+
+            cachedLibraryResult = clientLibraryCacheManager.getCachedLibrary(root, type, brand.or(Brands.DEFAULT_BRAND))
+
+            if ( cachedLibraryResult ) {
+
+                LOG.debug("Cached library found after acquiring the write lock - unlocking and returning the cached library for " + root.getPath());
+                libraryCacheReadWriteLock.writeLock().unlock()
+                return cachedLibraryResult
 
             }
 
-            LOG.debug( "Filtered dependencies for " + root.getPath() + " : " + filteredDependencies )
+            def requestedLibrary = requestClientLibraryRendering(root, type, brand)
 
-            if ( type == LibraryType.CSS ) {
-                String compiledCssLibrary = compileCSSClientLibrary( root, filteredDependencies )
+            LOG.debug("Caching library " + root.getPath());
+            clientLibraryCacheManager.cacheLibrary(root, type, brand.or(Brands.DEFAULT_BRAND), requestedLibrary)
 
-                return compiledCssLibrary
-            }
-            else if ( type == LibraryType.JS ) {
-                String compiledJsLibrary = compileJSClientLibrary( root, filteredDependencies )
-
-                return compiledJsLibrary
-
-            }
-
-            return null
+            return requestedLibrary
 
         } catch ( InvalidClientLibraryCategoryException e ) {
             throw new ClientLibraryCompilationException( "Invalid Client Library Exception hit in attempting to build library", e )
+        } finally {
+            if ( libraryCacheReadWriteLock.isWriteLockedByCurrentThread() ) {
+                LOG.debug("Releasing the write lock held for the caching of " + root.getPath());
+                libraryCacheReadWriteLock.writeLock().unlock()
+            }
         }
+    }
+
+    private String requestClientLibraryRendering(Resource root, LibraryType type, Optional<String> brand) {
+
+        List<ClientLibrary> dependencies = getOrderedDependencies( root )
+
+        Set<String> currentRunModes = slingSettingsService.runModes
+
+        LOG.debug( "Found dependencies for " + root.getPath() + " : " + dependencies )
+
+        /*
+         * Filter the included libraries based on run mode
+         */
+        List<ClientLibrary> filteredDependencies = dependencies.findAll { ClientLibrary currentDependency ->
+
+            return currentDependency.isIncludedForRunModes(currentRunModes) &&
+                    currentDependency.isIncludedForBrand(brand)
+
+        }
+
+        LOG.debug( "Filtered dependencies for " + root.getPath() + " : " + filteredDependencies )
+
+        if ( type == LibraryType.CSS ) {
+            String compiledCssLibrary = compileCSSClientLibrary( root, filteredDependencies )
+
+            return compiledCssLibrary
+        }
+        else if ( type == LibraryType.JS ) {
+            String compiledJsLibrary = compileJSClientLibrary( root, filteredDependencies )
+
+            return compiledJsLibrary
+
+        }
+
+        return null
+
     }
 
     @Override
     public DependencyGraph<ClientLibrary> getClientLibraryDependencyGraph(Resource root) {
 
         return getDependencyGraph(root);
+
+
 
     }
 /**
