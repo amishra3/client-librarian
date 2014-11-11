@@ -19,12 +19,15 @@ import com.citytechinc.cq.clientlibs.api.domain.library.ClientLibrary;
 import com.citytechinc.cq.clientlibs.api.events.library.ClientLibraryEvent;
 import com.citytechinc.cq.clientlibs.api.events.library.factory.ClientLibraryEventFactory;
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ClientLibraryManager;
+import com.citytechinc.cq.clientlibs.api.services.clientlibs.cache.ClientLibraryCacheManager;
+import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.ClientLibraryCachingException;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
@@ -40,11 +43,13 @@ public class ClientLibraryEventListener implements EventListener {
 
     private final ClientLibraryEventFactory clientLibraryEventFactory;
     private final ClientLibraryManager clientLibraryManager;
+    private final ClientLibraryCacheManager clientLibraryCacheManager;
     private final Session session;
 
-    public ClientLibraryEventListener(ClientLibraryEventFactory clientLibraryEventFactory, ClientLibraryManager clientLibraryManager, Session session) {
+    public ClientLibraryEventListener(ClientLibraryEventFactory clientLibraryEventFactory, ClientLibraryManager clientLibraryManager, ClientLibraryCacheManager clientLibraryCacheManager, Session session) {
         this.clientLibraryEventFactory = clientLibraryEventFactory;
         this.clientLibraryManager = clientLibraryManager;
+        this.clientLibraryCacheManager = clientLibraryCacheManager;
         this.session = session;
     }
 
@@ -72,7 +77,10 @@ public class ClientLibraryEventListener implements EventListener {
                     clientLibraryEventList.add(clientLibraryEventOptional.get());
                 }
 
-            } catch (RepositoryException e) {
+            } catch (PathNotFoundException e) {
+                LOG.debug("Path Not Found Exception encountered while processing potential Client Library events", e);
+            }
+            catch (RepositoryException e) {
                 LOG.error("Repository Exception encountered while processing potential Client Library events", e);
             }
 
@@ -80,6 +88,11 @@ public class ClientLibraryEventListener implements EventListener {
         }
 
         if (clientLibraryEventList.size() > 0) {
+            try {
+                clientLibraryCacheManager.clearCache();
+            } catch (ClientLibraryCachingException e) {
+                LOG.error("Exception encountered clearing client library cache", e);
+            }
             clientLibraryManager.requestRefresh();
         }
 

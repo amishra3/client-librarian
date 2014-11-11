@@ -18,22 +18,25 @@ package com.citytechinc.cq.clientlibs.api.services.clientlibs.cache;
 import com.citytechinc.cq.clientlibs.api.domain.library.LibraryType;
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.CachedClientLibraryLookupException;
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.ClientLibraryCachingException;
+import com.google.common.base.Optional;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.Resource;
 
 public interface ClientLibraryCacheManager {
 
-    public String getCachedLibrary(Resource root, LibraryType type) throws CachedClientLibraryLookupException;
+    public Optional<String> getCachedLibrary(Resource root, LibraryType type) throws CachedClientLibraryLookupException;
 
-    public String getCachedLibrary(Resource root, LibraryType type, String brand) throws CachedClientLibraryLookupException;
+    public Optional<String> getCachedLibrary(Resource root, LibraryType type, String brand) throws CachedClientLibraryLookupException;
 
     public void cacheLibrary(Resource root, LibraryType type, String libraryContent) throws ClientLibraryCachingException;
 
     public void cacheLibrary(Resource root, LibraryType type, String brand, String libraryContent) throws ClientLibraryCachingException;
 
-    public void invalidateCache(Resource root, LibraryType type) throws ClientLibraryCachingException;
+    public void invalidateCache(String rootPath) throws ClientLibraryCachingException;
 
-    public void invalidateCache(Resource root, LibraryType type, String brand) throws ClientLibraryCachingException;
+    public void invalidateCache(String rootPath, LibraryType type) throws ClientLibraryCachingException;
+
+    public void invalidateCache(String rootPath, LibraryType type, String brand) throws ClientLibraryCachingException;
 
     public void clearCache() throws ClientLibraryCachingException;
 }

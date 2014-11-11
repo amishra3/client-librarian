@@ -19,6 +19,8 @@ import javax.jcr.RepositoryException;
 
 import com.citytechinc.cq.clientlibs.api.jmx.ClientLibraryRepositoryReportingAndMaintenanceMBean;
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.ClientLibraryRepository;
+import com.citytechinc.cq.clientlibs.api.services.clientlibs.cache.ClientLibraryCacheManager;
+import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.ClientLibraryCachingException;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
@@ -39,6 +41,9 @@ public class DefaultClientLibraryRepositoryReportingAndMaintenanceMBean implemen
     @Reference
     ClientLibraryRepository repository;
 
+    @Reference
+    ClientLibraryCacheManager clientLibraryCacheManager;
+
     @Override
     public void refresh() {
         try {
@@ -47,6 +52,15 @@ public class DefaultClientLibraryRepositoryReportingAndMaintenanceMBean implemen
             LOG.error("Error refreshing repository", e);
         } catch (LoginException e) {
             LOG.error("Error refreshing repository", e);
+        }
+    }
+
+    @Override
+    public void clearCache() {
+        try {
+            clientLibraryCacheManager.clearCache();
+        } catch (ClientLibraryCachingException e) {
+            LOG.error("Client Library Caching Exception encountered while attempting to clear the cache via JMX", e);
         }
     }
 

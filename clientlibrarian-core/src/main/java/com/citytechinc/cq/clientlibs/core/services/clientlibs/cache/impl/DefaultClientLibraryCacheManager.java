@@ -21,6 +21,7 @@ import com.citytechinc.cq.clientlibs.api.domain.library.LibraryType;
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.cache.ClientLibraryCacheManager;
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.CachedClientLibraryLookupException;
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.ClientLibraryCachingException;
+import com.google.common.base.Optional;
 import com.google.common.io.CharStreams;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Reference;
@@ -49,14 +50,14 @@ public class DefaultClientLibraryCacheManager implements ClientLibraryCacheManag
     private ResourceResolverFactory resourceResolverFactory;
 
     @Override
-    public String getCachedLibrary(Resource root, LibraryType type) throws CachedClientLibraryLookupException {
+    public Optional<String> getCachedLibrary(Resource root, LibraryType type) throws CachedClientLibraryLookupException {
         return getCachedLibrary(root, type, Brands.DEFAULT_BRAND);
     }
 
     @Override
-    public String getCachedLibrary(Resource root, LibraryType type, String brand) throws CachedClientLibraryLookupException {
+    public Optional<String> getCachedLibrary(Resource root, LibraryType type, String brand) throws CachedClientLibraryLookupException {
 
-        Resource cachedResource = root.getResourceResolver().getResource(getPathForLibrary(root, type, brand));
+        Resource cachedResource = root.getResourceResolver().getResource(getPathToLibraryFile(root.getPath(), type, brand));
 
         if (cachedResource != null) {
 
@@ -72,7 +73,7 @@ public class DefaultClientLibraryCacheManager implements ClientLibraryCacheManag
 
                 libraryReader.close();
 
-                return libraryString;
+                return Optional.of(libraryString);
 
             } catch (RepositoryException e) {
                 LOG.error("Repository Exception encountered looking up cached library for " + cachedResource.getPath(), e);
@@ -83,7 +84,7 @@ public class DefaultClientLibraryCacheManager implements ClientLibraryCacheManag
             }
         }
 
-        return null;
+        return Optional.absent();
 
     }
 
@@ -103,7 +104,7 @@ public class DefaultClientLibraryCacheManager implements ClientLibraryCacheManag
 
             JcrUtils.putFile(
                     cachedResourceFolder.adaptTo(Node.class),
-                    getNameForLibrary(root, type, brand),
+                    "library",
                     "application/javascript",
                     stream
             );
@@ -124,15 +125,39 @@ public class DefaultClientLibraryCacheManager implements ClientLibraryCacheManag
     }
 
     @Override
-    public void invalidateCache(Resource root, LibraryType type) throws ClientLibraryCachingException {
-        invalidateCache(root, type, Brands.DEFAULT_BRAND);
+    public void invalidateCache(String rootPath) throws ClientLibraryCachingException {
+
+        LOG.debug("Invalidating Cache Set for " + rootPath);
+
+        try {
+            Resource cachedLibraryResource = getAdministrativeResourceResolver().getResource(getPathToLibrarySet(rootPath));
+
+            LOG.debug("Looking up current cache at " + getPathToLibrarySet(rootPath));
+
+            if (cachedLibraryResource != null) {
+                getAdministrativeResourceResolver().delete(cachedLibraryResource);
+                getAdministrativeResourceResolver().commit();
+            }
+        } catch (LoginException e) {
+            LOG.error("Login Exception encountered attempting to invalidate cache for page libraries " + rootPath, e);
+            throw new ClientLibraryCachingException("Login Exception encountered attempting to invalidate cache for page libraries " + rootPath, e);
+        } catch (PersistenceException e) {
+            LOG.error("Persistence Exception encountered attempting to invalidate cache for page libraries " + rootPath, e);
+            throw new ClientLibraryCachingException("Persistence Exception encountered attempting to invalidate cache for page libraries " + rootPath, e);
+        }
+
     }
 
     @Override
-    public void invalidateCache(Resource root, LibraryType type, String brand) throws ClientLibraryCachingException {
+    public void invalidateCache(String rootPath, LibraryType type) throws ClientLibraryCachingException {
+        invalidateCache(rootPath, type, Brands.DEFAULT_BRAND);
+    }
+
+    @Override
+    public void invalidateCache(String rootPath, LibraryType type, String brand) throws ClientLibraryCachingException {
 
         try {
-            Resource libraryResource = getAdministrativeResourceResolver().getResource(getPathForLibrary(root, type, brand));
+            Resource libraryResource = getAdministrativeResourceResolver().getResource(getPathToLibrary(rootPath, type, brand));
 
             if (libraryResource != null) {
 
@@ -143,13 +168,13 @@ public class DefaultClientLibraryCacheManager implements ClientLibraryCacheManag
             }
         } catch (LoginException e) {
 
-            LOG.error("Login Exception encountered invalidating cached library " + root.getPath());
-            throw new ClientLibraryCachingException("Login Exception encountered invalidating cached library " + root.getPath(), e);
+            LOG.error("Login Exception encountered invalidating cached library " + rootPath);
+            throw new ClientLibraryCachingException("Login Exception encountered invalidating cached library " + rootPath, e);
 
         } catch (PersistenceException e) {
 
-            LOG.error("Persistence Exception encountered invalidating cached library " + root.getPath());
-            throw new ClientLibraryCachingException("Persistence Exception encountered invalidating cached library " + root.getPath(), e);
+            LOG.error("Persistence Exception encountered invalidating cached library " + rootPath);
+            throw new ClientLibraryCachingException("Persistence Exception encountered invalidating cached library " + rootPath, e);
 
         }
 
@@ -189,7 +214,7 @@ public class DefaultClientLibraryCacheManager implements ClientLibraryCacheManag
 
     private Resource getOrCreateCachedLibraryFolderResource(Resource root, LibraryType type, String brand) throws LoginException, RepositoryException {
 
-        String pathToLibrary = getPathToLibrary(root, type, brand);
+        String pathToLibrary = getPathToLibrary(root.getPath(), type, brand);
 
         Resource cachedLibraryResource = getAdministrativeResourceResolver().getResource(pathToLibrary);
 
@@ -201,7 +226,7 @@ public class DefaultClientLibraryCacheManager implements ClientLibraryCacheManag
 
         JcrResourceUtil.createPath(
                 varResource.adaptTo(Node.class),
-                getPathToLibraryRelativeToVar(root, type, brand),
+                getPathToLibraryRelativeToVar(root.getPath(), type, brand),
                 "sling:Folder",
                 "sling:Folder",
                 true);
@@ -210,23 +235,28 @@ public class DefaultClientLibraryCacheManager implements ClientLibraryCacheManag
 
     }
 
-    private static String getPathForLibrary(Resource root, LibraryType type, String brand) {
-        return "/var/" + getPathForLibraryRelativeToVar(root, type, brand);
+    /**
+     * The Path to the Library Set will be /var/clientlibrarian/[path-of-root].
+     *
+     */
+    private static String getPathToLibrarySet(String rootPath) {
+        return "/var/" + getPathToLibrarySetRelativeToVar(rootPath);
     }
 
-    private static String getPathToLibrary(Resource root, LibraryType type, String brand) {
-        return "/var/" + getPathToLibraryRelativeToVar(root, type, brand);
+    private static String getPathToLibrarySetRelativeToVar(String rootPath) {
+        return "clientlibrarian" + rootPath;
     }
 
-    private static String getPathForLibraryRelativeToVar(Resource root, LibraryType type, String brand) {
-        return getPathToLibraryRelativeToVar(root, type, brand) + "/" + getNameForLibrary(root, type, brand);
+    private static String getPathToLibrary(String rootPath, LibraryType type, String brand) {
+        return "/var/" + getPathToLibraryRelativeToVar(rootPath, type, brand);
     }
 
-    private static String getPathToLibraryRelativeToVar(Resource root, LibraryType type, String brand) {
-        return "clientlibrarian" + root.getPath().substring(0, root.getPath().lastIndexOf("/"));
+    private static String getPathToLibraryRelativeToVar(String rootPath, LibraryType type, String brand) {
+        return "clientlibrarian" + rootPath + "/" + brand + "/" + type;
     }
 
-    private static String getNameForLibrary(Resource root, LibraryType type, String brand) {
-        return root.getName() + "." + brand + "." + type;
+    private static String getPathToLibraryFile(String rootPath, LibraryType type, String brand) {
+        return getPathToLibrary(rootPath, type, brand) + "/library";
     }
+
 }

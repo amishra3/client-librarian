@@ -27,6 +27,7 @@ import com.citytechinc.cq.clientlibs.api.services.clientlibs.compilers.less.Less
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.exceptions.ClientLibraryCompilationException
 import com.citytechinc.cq.clientlibs.api.services.clientlibs.transformer.VariableProvider
 import com.citytechinc.cq.clientlibs.api.structures.graph.DependencyGraph
+import com.citytechinc.cq.clientlibs.core.listeners.content.impl.PageContentEventListener
 import com.citytechinc.cq.clientlibs.core.services.clientlibs.state.manager.impl.ClientLibraryRepositoryStateManager
 import com.citytechinc.cq.clientlibs.api.services.components.DependentComponentManager
 import com.google.common.base.Optional
@@ -35,6 +36,7 @@ import org.apache.commons.lang.StringUtils
 import org.apache.felix.scr.annotations.*
 import org.apache.sling.api.resource.LoginException
 import org.apache.sling.api.resource.Resource
+import org.apache.sling.jcr.api.SlingRepository
 import org.apache.sling.settings.SlingSettingsService
 import org.mozilla.javascript.RhinoException
 import org.osgi.framework.Constants
@@ -42,6 +44,9 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import javax.jcr.RepositoryException
+import javax.jcr.Session
+import javax.jcr.observation.Event
+import javax.jcr.observation.ObservationManager
 import javax.jcr.query.InvalidQueryException
 
 import org.apache.sling.commons.osgi.PropertiesUtil
@@ -85,6 +90,13 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     private static final String STRICT_JAVASCRIPT = "strictJavascript"
     private Boolean strictJavascript
 
+    private session
+
+    @Reference
+    private SlingRepository repository
+
+    private PageContentEventListener pageContentEventListener
+
     protected ClientLibraryRepositoryStateManager stateManager
 
     protected ReentrantReadWriteLock resourceDependencyProviderListReadWriteLock
@@ -125,6 +137,18 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
         strictJavascript = PropertiesUtil.toBoolean(properties.get(STRICT_JAVASCRIPT), false)
 
+        pageContentEventListener = new PageContentEventListener(clientLibraryCacheManager)
+        ObservationManager observationManager = administrativeSession.workspace.observationManager
+        observationManager.addEventListener(
+                pageContentEventListener,
+                //Event.NODE_REMOVED & Event.NODE_MOVED & Event.PROPERTY_ADDED & Event.PROPERTY_CHANGED & Event.PROPERTY_REMOVED,
+                31,
+                "/content",
+                true,
+                null,
+                ["cq:PageContent"] as String[],
+                true)
+
     }
 
     @Modified
@@ -137,10 +161,12 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
     @Deactivate
     protected void deactivate() {
 
-        LOG.debug( "Deactivating Service" )
         stateManager = null
 
-        LOG.debug( "Deactivation Completed" )
+        if ( pageContentEventListener != null ) {
+            administrativeSession.workspace.observationManager.removeEventListener(pageContentEventListener)
+            pageContentEventListener = null
+        }
 
     }
 
@@ -159,15 +185,16 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         }
 
         if(resourceDependencyProviderListContains) {
-            LOG.error(resourceDependencyProvider + " already exists in the services Resource Dependency Provider List")
-        }else {
+            LOG.error(resourceDependencyProvider.toString() + " already exists in the services Resource Dependency Provider List")
+        }
+        else {
 
             try {
                 this.resourceDependencyProviderListReadWriteLock.writeLock().lock()
                 boolean resourceDependencyProviderListAdd = this.resourceDependencyProviderList.add(resourceDependencyProvider)
 
-                if(resourceDependencyProviderListAdd) {
-                    LOG.error(resourceDependencyProvider + " already exists in the services Resource Dependency Provider List after contains check")
+                if(!resourceDependencyProviderListAdd) {
+                    LOG.error(resourceDependencyProvider.toString() + " already exists in the services Resource Dependency Provider List after contains check")
                 }
             } finally {
                 this.resourceDependencyProviderListReadWriteLock.writeLock().unlock()
@@ -223,14 +250,14 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         }
 
         if(variableProviderListContains) {
-            LOG.error(variableProvider + " already exists in the service's Variable Provider List")
+            LOG.error(variableProvider.toString() + " already exists in the service's Variable Provider List")
         }else {
             try {
                 this.variableProviderListReadWriteLock.writeLock().lock()
                 boolean variableProviderListAdd = this.variableProviderList.add(variableProvider)
 
                 if(variableProviderListAdd) {
-                    LOG.error(variableProvider + " already exists in the service's Variable Provider List after contains check")
+                    LOG.error(variableProvider.toString() + " already exists in the service's Variable Provider List after contains check")
                 }
             }finally {
                 this.variableProviderListReadWriteLock.writeLock().unlock()
@@ -253,7 +280,7 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         }
 
         if(variableProviderListContains) {
-            LOG.error(variableProvider + " already exists in the service's Variable Provider List")
+            LOG.error(variableProvider.toString() + " already exists in the service's Variable Provider List")
         }else {
             try {
                 this.variableProviderListReadWriteLock.writeLock().lock()
@@ -286,10 +313,10 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
             //Check whether a cached version of the library exists
             def cachedLibraryResult = clientLibraryCacheManager.getCachedLibrary(root, type, brand.or(Brands.DEFAULT_BRAND))
 
-            if ( cachedLibraryResult ) {
+            if ( cachedLibraryResult.isPresent() ) {
 
                 LOG.debug("Cached Library was found for " + root.getPath());
-                return cachedLibraryResult
+                return cachedLibraryResult.get()
 
             }
             //if a cached version was not found - grab the cache write lock and produce the version
@@ -299,11 +326,11 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
             cachedLibraryResult = clientLibraryCacheManager.getCachedLibrary(root, type, brand.or(Brands.DEFAULT_BRAND))
 
-            if ( cachedLibraryResult ) {
+            if ( cachedLibraryResult.isPresent() ) {
 
                 LOG.debug("Cached library found after acquiring the write lock - unlocking and returning the cached library for " + root.getPath());
                 libraryCacheReadWriteLock.writeLock().unlock()
-                return cachedLibraryResult
+                return cachedLibraryResult.get()
 
             }
 
@@ -495,6 +522,22 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
         }
 
         return transformedCssLibrary;
+    }
+
+    /**
+     * Get an administrative JCR session.
+     *
+     * Copied from the now defunct AbstractSlingService
+     *
+     * @return session
+     * @throws RepositoryException if error occurs during authentication
+     */
+    protected final Session getAdministrativeSession() throws RepositoryException {
+        if (session == null) {
+            session = repository.loginAdministrative(null);
+        }
+
+        return session;
     }
 
 }

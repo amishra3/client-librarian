@@ -23,6 +23,9 @@ public interface ClientLibraryRepositoryReportingAndMaintenanceMBean {
     @Description("Refresh the client libraries and component dependencies in the Repository.")
     void refresh();
 
+    @Description("Clear the cache of rendered Client Libraries in the Repository.")
+    void clearCache();
+
     @Description("The count of client libraries found in the content repository.")
     Integer getClientLibraryCount();
 

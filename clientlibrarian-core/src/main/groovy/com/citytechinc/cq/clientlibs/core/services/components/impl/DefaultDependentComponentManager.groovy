@@ -16,6 +16,7 @@
 package com.citytechinc.cq.clientlibs.core.services.components.impl
 
 import com.citytechinc.cq.clientlibs.api.events.components.factory.DependentComponentEventFactory
+import com.citytechinc.cq.clientlibs.api.services.clientlibs.cache.ClientLibraryCacheManager
 import com.citytechinc.cq.clientlibs.core.domain.component.Components
 import com.citytechinc.cq.clientlibs.api.domain.component.DependentComponent
 import com.citytechinc.cq.clientlibs.api.services.components.DependentComponentManager
@@ -65,6 +66,10 @@ class DefaultDependentComponentManager implements DependentComponentManager {
 
     @org.apache.felix.scr.annotations.Reference
     private SlingRepository repository
+
+    @org.apache.felix.scr.annotations.Reference
+    private ClientLibraryCacheManager clientLibraryCacheManager
+
     private Session session
 
     private DependentComponentEventListener clientLibraryComponentListener
@@ -135,7 +140,7 @@ class DefaultDependentComponentManager implements DependentComponentManager {
     protected void activate( Map<String, Object> properties ) throws RepositoryException, LoginException {
 
         ObservationManager observationManager = administrativeSession.workspace.observationManager
-        clientLibraryComponentListener = new DependentComponentEventListener(new DefaultDependentComponentEventFactory(), this, session)
+        clientLibraryComponentListener = new DependentComponentEventListener(new DefaultDependentComponentEventFactory(), this, clientLibraryCacheManager, session)
         observationManager.addEventListener(clientLibraryComponentListener, 31, "/", true, null, null, true)
 
     }
