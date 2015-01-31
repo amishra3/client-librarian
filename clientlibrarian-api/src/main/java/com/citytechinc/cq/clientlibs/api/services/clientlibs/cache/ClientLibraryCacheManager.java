@@ -22,6 +22,11 @@ import com.google.common.base.Optional;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.Resource;
 
+/**
+ * A management interface for the library cache of the Client Librarian.  Individual libraries may
+ * be cached for ease of retrieval later.  As content or individual libraries change the related caches
+ * are cleared.
+ */
 public interface ClientLibraryCacheManager {
 
     public Optional<String> getCachedLibrary(Resource root, LibraryType type) throws CachedClientLibraryLookupException, LoginException;

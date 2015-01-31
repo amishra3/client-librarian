@@ -32,6 +32,8 @@ mvn clean install
 After this, the target directory of the clientlibrarian-ui module will contain the installable package .zip file.
 This can be installed via the Package Manager.
 
+The Client Librarian is also available from the central Maven repository.  The current version is `0.5.0`.
+
 ## Basic Usage
 
 The Client-Librarian produces and delivers page specific CSS and JavaScript libraries via a servlet listening for
