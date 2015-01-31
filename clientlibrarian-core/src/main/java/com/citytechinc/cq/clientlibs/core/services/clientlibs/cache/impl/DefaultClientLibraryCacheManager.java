@@ -50,14 +50,22 @@ public class DefaultClientLibraryCacheManager implements ClientLibraryCacheManag
     private ResourceResolverFactory resourceResolverFactory;
 
     @Override
-    public Optional<String> getCachedLibrary(Resource root, LibraryType type) throws CachedClientLibraryLookupException {
+    public Optional<String> getCachedLibrary(Resource root, LibraryType type) throws CachedClientLibraryLookupException, LoginException {
         return getCachedLibrary(root, type, Brands.DEFAULT_BRAND);
     }
 
     @Override
-    public Optional<String> getCachedLibrary(Resource root, LibraryType type, String brand) throws CachedClientLibraryLookupException {
+    public Optional<String> getCachedLibrary(Resource root, LibraryType type, String brand) throws CachedClientLibraryLookupException, LoginException {
 
-        Resource cachedResource = root.getResourceResolver().getResource(getPathToLibraryFile(root.getPath(), type, brand));
+        /*
+         * NOTE: Using the administrative resource resolver here as it was the resolver creating the cached resource
+         * In cases where library requests come back to back, the resource resolver from the root may not have been
+         * refreshed in time to see the cached library -
+         *
+         * TODO: use root's ResourceResolver in Sling7 once the refresh method is implemented on ResourceResolver
+         */
+
+        Resource cachedResource = getAdministrativeResourceResolver().getResource(getPathToLibraryFile(root.getPath(), type, brand));
 
         if (cachedResource != null) {
 

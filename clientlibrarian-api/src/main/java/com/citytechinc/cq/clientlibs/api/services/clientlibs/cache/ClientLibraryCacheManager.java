@@ -24,9 +24,9 @@ import org.apache.sling.api.resource.Resource;
 
 public interface ClientLibraryCacheManager {
 
-    public Optional<String> getCachedLibrary(Resource root, LibraryType type) throws CachedClientLibraryLookupException;
+    public Optional<String> getCachedLibrary(Resource root, LibraryType type) throws CachedClientLibraryLookupException, LoginException;
 
-    public Optional<String> getCachedLibrary(Resource root, LibraryType type, String brand) throws CachedClientLibraryLookupException;
+    public Optional<String> getCachedLibrary(Resource root, LibraryType type, String brand) throws CachedClientLibraryLookupException, LoginException;
 
     public void cacheLibrary(Resource root, LibraryType type, String libraryContent) throws ClientLibraryCachingException;
 

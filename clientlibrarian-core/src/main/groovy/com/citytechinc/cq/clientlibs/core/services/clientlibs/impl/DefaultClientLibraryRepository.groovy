@@ -310,21 +310,25 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
         try {
 
+            LOG.debug("Looking up whether cached library exists for " + root.getPath())
+
             //Check whether a cached version of the library exists
             def cachedLibraryResult = clientLibraryCacheManager.getCachedLibrary(root, type, brand.or(Brands.DEFAULT_BRAND))
 
             if ( cachedLibraryResult.isPresent() ) {
 
-                LOG.debug("Cached Library was found for " + root.getPath());
+                LOG.debug("Cached Library was found for " + root.getPath())
                 return cachedLibraryResult.get()
 
             }
             //if a cached version was not found - grab the cache write lock and produce the version
             libraryCacheReadWriteLock.writeLock().lock()
 
-            LOG.debug("Grabbed the Cache Write lock to produce the library for " + root.getPath());
+            LOG.debug("Grabbed the Cache Write lock to produce the library for " + root.getPath())
 
             cachedLibraryResult = clientLibraryCacheManager.getCachedLibrary(root, type, brand.or(Brands.DEFAULT_BRAND))
+
+            LOG.debug("Cached library result after write lock obtainment " + cachedLibraryResult.orNull())
 
             if ( cachedLibraryResult.isPresent() ) {
 
@@ -334,9 +338,11 @@ class DefaultClientLibraryRepository implements ClientLibraryRepository {
 
             }
 
+            LOG.debug("No cached library found for " + root.getPath() + " requesting")
+
             def requestedLibrary = requestClientLibraryRendering(root, type, brand)
 
-            LOG.debug("Caching library " + root.getPath());
+            LOG.debug("Caching library " + root.getPath())
             clientLibraryCacheManager.cacheLibrary(root, type, brand.or(Brands.DEFAULT_BRAND), requestedLibrary)
 
             return requestedLibrary
